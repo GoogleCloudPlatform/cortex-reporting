@@ -1,0 +1,10 @@
+output
+*.json
+env
+tests/logs/
+*.bak
+tests/bats
+tests/test_helper
+tests/report/
+tests/resources/report.xml
+tests/report-*.xml
