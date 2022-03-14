@@ -78,4 +78,5 @@ AS (
      ) as val_out
 
     --t6_in.dimid, t6_in.nennr, t6_in.zaehl, t6_in.addko 
-    from t6_out join t6_in on t6_out.mandt = t6_in.mandt;
+    from t6_out join t6_in on t6_out.mandt = t6_in.mandt
+  );
