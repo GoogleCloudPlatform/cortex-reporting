@@ -11,16 +11,16 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.ProfitCentersMD`
+
+CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.DistributionChannelsMD`
 OPTIONS(
-  description = "Profit Centers Master Data"
+description = "Distribution Channel Details"
 )
 AS
-SELECT
-  TVTW.MANDT AS Client_MANDT,
-  TVTW.VTWEG AS DistributionChannel_VTWEG,
-  TVTWT.SPRAS AS LanguageKey_SPRAS,
-  TVTWT.VTEXT AS Name_VTEXT
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.tvtw` AS tvtw
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.tvtwt` AS tvtwt
-  ON tvtw.mandt = tvtwt.mandt AND tvtw.vtweg = tvtwt.vtweg
+{% if sql_flavour == 's4' -%}
+{% include './s4/DistributionChannelsMD.sql' %}
+{% else -%}
+{% include './ecc/DistributionChannelsMD.sql' %}
+{% endif -%}
+;
+

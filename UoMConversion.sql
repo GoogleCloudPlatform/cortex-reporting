@@ -1,3 +1,4 @@
+#-- noqa: disable=all
 #-- Copyright 2022 Google LLC
 #--
 #-- Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,14 +56,14 @@ AS (
     #(t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ ( - t6_out.exp10 - t6_in.exp10 ) ), 1 ) as denom_neg,
     #( val_in * ( (t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ (  t6_out.exp10 - t6_in.exp10 ) ), 1 ) ) )  as num_pos,
     #( t6_out.zaehl * t6_in.nennr ) as denom_pos,
-     if (t6_in.dimid <> t6_out.dimid, 'ERROR', t6_in.dimid) as dimension,
-     if ( t6_out.exp10 - t6_in.exp10 < 0,
-     
-        (val_in * ( t6_out.zaehl * t6_in.nennr ) ) /  --Numerator
+    if(t6_in.dimid != t6_out.dimid, 'ERROR', t6_in.dimid) AS dimension,
+    if ( t6_out.exp10 - t6_in.exp10 < 0,
 
-        (t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ ( - t6_out.exp10 - t6_in.exp10 ) ), 1 ) + -- Denominator
+      (val_in * ( t6_out.zaehl * t6_in.nennr ) ) /  --Numerator
+
+      (t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ ( - t6_out.exp10 - t6_in.exp10 ) ), 1 ) + -- Denominator
         
-        ( (t6_out.addko - t6_in.addko ) * t6_in.to_conv ) * if(t6_in.exp10 <> 0, ( 10 ^ ( -t6_in.exp10 ) ), 1 ),   -- Addition 
+      ( (t6_out.addko - t6_in.addko ) * t6_in.to_conv ) * if(t6_in.exp10 <> 0, ( 10 ^ ( -t6_in.exp10 ) ), 1 ),   -- Addition 
      --if t6_out.exp10 - t6_in.exp10 > 0 POS
 
      ( val_in * ( (t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ (  t6_out.exp10 - t6_in.exp10 ) ), 1 ) ) -- Numerator
@@ -76,7 +77,5 @@ AS (
       ,0 )
      
      ) as val_out
-
-    --t6_in.dimid, t6_in.nennr, t6_in.zaehl, t6_in.addko 
-    from t6_out join t6_in on t6_out.mandt = t6_in.mandt
-  );
+  FROM t6_out INNER JOIN t6_in ON t6_out.mandt = t6_in.mandt
+);

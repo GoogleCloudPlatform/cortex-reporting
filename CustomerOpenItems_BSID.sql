@@ -190,10 +190,7 @@ SELECT BKPF.MANDT AS Client_MANDT, BKPF.BUKRS AS CompanyCode_BUKRS, BKPF.BELNR A
   BSEG.XLGCLR AS ClearingSpecificToLedgerGroups_XLGCLR, BSEG.TAXPS AS TaxDocumentItemNumber_TAXPS, BSEG.PAYS_PROV AS PaymentServiceProvider_PAYS_PROV,
   BSEG.PAYS_TRAN AS PaymentReferenceOfPaymentServiceProvider_PAYS_TRAN, BSEG.MNDID AS UniqueReferenceToMandateForEachPayee_MNDID,
   BSEG.XFRGE_BSEG AS PaymentIsReleased_XFRGE_BSEG, BSEG.SQUAN AS QuantitySign_SQUAN,
-  BSEG.ZZSPREG AS SpecialRegion_ZZSPREG, BSEG.ZZBUSPARTN AS BusinessPartner_ZZBUSPARTN, BSEG.ZZCHAN AS DistributionChannel_ZZCHAN,
-  BSEG.ZZPRODUCT AS ProductGroup_ZZPRODUCT, BSEG.ZZLOCA AS City_ZZLOCA, BSEG.ZZLOB AS BusinessLine_ZZLOB,
-  BSEG.ZZUSERFLD1 AS Territory_ZZUSERFLD1, BSEG.ZZUSERFLD2 AS Ownercont_ZZUSERFLD2, BSEG.ZZUSERFLD3 AS Vein_ZZUSERFLD3,
-  BSEG.ZZSTATE AS StateprovinceCode_ZZSTATE, BSEG.ZZREGION AS Location_ZZREGION, BSEG.RE_BUKRS AS CashLedger_CompanyCodeForExpenserevenue_RE_BUKRS,
+  BSEG.RE_BUKRS AS CashLedger_CompanyCodeForExpenserevenue_RE_BUKRS,
   BSEG.RE_ACCOUNT AS CashLedger_ExpenseOrRevenueAccount_RE_ACCOUNT, BSEG.PGEBER AS PartnerFund_PGEBER,
   BSEG.PGRANT_NBR AS PartnerGrant_PGRANT_NBR, BSEG.BUDGET_PD AS Fm_BudgetPeriod_BUDGET_PD,
   BSEG.PBUDGET_PD AS Fm_PartnerBudgetPeriod_PBUDGET_PD, BSEG.J_1TPBUPL AS BranchCode_J_1TPBUPL, BSEG.PEROP_BEG AS BillingPeriodOfPerformanceStartDate_PEROP_BEG,
@@ -220,5 +217,7 @@ LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.bseg` AS bseg
     AND bkpf.belnr = bseg.belnr
 WHERE bseg.koart = 'D'
   AND bseg.augbl IS NULL
-    --##S4## and bseg.h_bstat <> 'D'
-    --##S4## and bseg.h_bstat <> 'M'
+  {% if sql_flavour.upper() == 'S4' %}
+    AND bseg.h_bstat != 'D'
+    AND bseg.h_bstat != 'M'
+  {% endif %}

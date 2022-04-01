@@ -13,14 +13,15 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CompaniesMD`
+CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountingDocumentsReceivables`
 OPTIONS(
-description = "Company Master Data"
+description="AR Accounting Documents Reporting"
 )
 AS
 {% if sql_flavour == 's4' -%}
-{% include './s4/CompaniesMD.sql' %}
+{% include './s4/AccountingDocumentsReceivables.sql' %}
 {% else -%}
-{% include './ecc/CompaniesMD.sql' %}
+{% include './ecc/AccountingDocumentsReceivables.sql' %}
 {% endif -%}
 ;
+

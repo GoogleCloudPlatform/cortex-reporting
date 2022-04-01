@@ -1,17 +1,4 @@
 #!/bin/bash
-#-- Copyright 2022 Google LLC
-#--
-#-- Licensed under the Apache License, Version 2.0 (the "License");
-#-- you may not use this file except in compliance with the License.
-#-- You may obtain a copy of the License at
-#--
-#--     https://www.apache.org/licenses/LICENSE-2.0
-#--
-#-- Unless required by applicable law or agreed to in writing, software
-#-- distributed under the License is distributed on an "AS IS" BASIS,
-#-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#-- See the License for the specific language governing permissions and
-#-- limitations under the License.
 #--------------------
 # Help Message
 #--------------------
@@ -27,11 +14,11 @@ Options
 -a | source-project             : Source Dataset Project ID. Mandatory
 -b | target-project             : Target Dataset Project ID. Mandatory
 -x | cdc-processed-dataset      : Source Dataset Name. Mandatory
--y | raw-landing-dataset        : Raw Landing Dataset Name.
--r | target-reporting-dataset   : Target Dataset Name for Reporting (Default: SAP_REPORTING)
--s | target-models-dataset      : Target Dataset Name for ML (Default: ML_MODELS)
+-y | raw-landing-dataset        : Raw Landing Dataset Name. (Default: cdc-processed-dataset)
+-r | target-reporting-dataset   : Target Dataset Name for Reporting (Default: REPORTING)
+-s | target-models-dataset      : Target Dataset Name for ML (Default: MODELS)
 -l | location                   : Dataset Location (Default: US)
--m | mandt                      : SAP Mandante
+-m | mandt                      : SAP Mandante. (Default: 050)
 -f | sql-flavour                : SQL Flavor Selection, ECC or S4. (Default: ECC)
 
 HELP_USAGE
@@ -59,13 +46,13 @@ validate() {
   fi
 
   if [ -z "${dataset_raw_landing-}" ]; then
-    echo 'INFO: "raw-landing-dataset" missing, defaulting to SAP_REPORTING.'
+    echo 'INFO: "raw-landing-dataset" missing, defaulting to dataset_cdc_processed.'
     dataset_raw_landing="${dataset_cdc_processed}"
   fi
 
   if [ -z "${dataset_reporting_tgt-}" ]; then
-    echo 'INFO: "target-reporting-dataset" missing, defaulting to SAP_REPORTING.'
-    dataset_reporting_tgt="SAP_REPORTING"
+    echo 'INFO: "target-reporting-dataset" missing, defaulting to REPORTING.'
+    dataset_reporting_tgt="REPORTING"
   fi
 
   if [ -z "${dataset_models_tgt-}" ]; then
@@ -79,14 +66,19 @@ validate() {
   fi
 
   if [ -z "${mandt-}" ]; then
-    echo 'ERROR: "mandt" is required. See help for details.'
-    exit 1
+    echo 'INFO: "mandt" is missing, defaulting to 050.'
+    mandt="050"
   fi
 
   if [[ -z "${sql_flavour-}" || -n "${sql_flavour-}" && $(echo "${sql_flavour}" | tr '[:upper:]' '[:lower:]') != "s4" ]]; then
     sql_flavour="ecc"
   else
     sql_flavour="s4"
+  fi
+
+  if [ ! -s "dependencies_${sql_flavour}.txt" ]; then
+    echo "ERROR: Did not find dependencies file for ${sql_flavour}"
+    exit 1
   fi
 
   if [[ -z "${views_dir-}" || "${views_dir}" == "none" ]]; then
@@ -101,6 +93,9 @@ validate() {
 
 bq_safe_mk() {
   dataset=$1
+  # Ideally, this would work, but bq ignores the location flag
+  #exists=$(bq ls -d | grep -w "$dataset")
+  #if [ -n "$exists" ]; then
   exists=$(bq query --location=$location --project_id=$project_id_tgt --use_legacy_sql=false "select distinct 'KITTYCORN' from ${dataset}.INFORMATION_SCHEMA.TABLES")
   if [[ "$exists" == *"KITTYCORN"* ]]; then
     echo "Not creating $dataset since it already exists"
@@ -177,7 +172,7 @@ views_dir=${@:$OPTIND:1}
 set +o errexit +o noclobber +o nounset +o pipefail
 
 #--------------------
-# Main Logic
+# Main logic
 #--------------------
 
 validate
@@ -196,16 +191,17 @@ echo "sql-flavour: ${sql_flavour}"
 echo "views_dir: ${views_dir}"
 
 success=0
-bq_safe_mk "${dataset_reporting_tgt}"
 
-for file_entry in $(cat ./dependencies.txt); do
-  echo "Creating ${file_entry} on ${dataset_reporting_tgt}"
-  gcloud builds submit --config=pipeline/cloudbuild.view.yaml --substitutions=_SQL_FILE="${file_entry}",_PJID_SRC="${project_id_src}",_PJID_TGT="${project_id_tgt}",_DS_CDC="${dataset_cdc_processed}",_DS_RAW="${dataset_raw_landing}",_DS_REPORTING="${dataset_reporting_tgt}",_DS_MODELS="${dataset_models_tgt}",_MANDT="${mandt}",_LOCATION="${location}",_SQL_FLAVOUR="${sql_flavour}" .
+bq_safe_mk "${dataset_reporting_tgt}"
+bq_safe_mk "${dataset_models_tgt}"
+
+while read -r file_entry; do
+  echo "Creating ${file_entry}"
+  gcloud builds submit --config=cloudbuild.view.yaml --substitutions=_SQL_FILE="${views_dir}/${file_entry}",_PJID_SRC="${project_id_src}",_PJID_TGT="${project_id_tgt}",_DS_CDC="${dataset_cdc_processed}",_DS_RAW="${dataset_raw_landing}",_DS_REPORTING="${dataset_reporting_tgt}",_DS_MODELS="${dataset_models_tgt}",_MANDT="${mandt}",_LOCATION="${location}",_SQL_FLAVOUR="${sql_flavour}" .
 
   if [ $? = 1 ]; then
     success=1
   fi
-
-done
+done <"dependencies_${sql_flavour}.txt"
 
 exit "${success}"

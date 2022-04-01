@@ -16,6 +16,7 @@ OPTIONS(
   description = "Finance Accounting Customer Cleared Items"
 )
 AS
+<<<<<<< HEAD
 --##S4## 
 --##S4## SELECT 
 --##S4## MANDT AS Client_MANDT, BUKRS AS CompanyCode_BUKRS, BELNR AS AccountingDocumentNumber_BELNR, GJAHR AS FiscalYear_GJAHR,
@@ -226,6 +227,216 @@ AS
 --##S4##    '          ' as bdgt_account
 --##S4##    from kittycorn-staging.2CDC_PROCESSED.bsad_bck where xarch = 'X'
 --##S4## UNION ALL
+=======
+
+{% if sql_flavour.upper() == 'S4' %} -- noqa: L003
+SELECT -- noqa: L003
+  MANDT AS Client_MANDT, BUKRS AS CompanyCode_BUKRS, BELNR AS AccountingDocumentNumber_BELNR, GJAHR AS FiscalYear_GJAHR,
+  BUZEI AS NumberOfLineItemWithinAccountingDocument_BUZEI, BUZID AS IdentificationOfTheLineItem_BUZID,
+  AUGDT AS ClearingDate_AUGDT, AUGCP AS ClearingEntryDate_AUGCP, AUGBL AS DocumentNumberOfTheClearingDocument_AUGBL,
+  BSCHL AS Posting_BSCHL, KOART AS AccountType_KOART, UMSKZ AS SpecialGlIndicator_UMSKZ,
+  UMSKS AS SpecialGlTransactionType_UMSKS,
+  BLART AS DocumentType_BLART, BLDAT AS DocumentDateInDocument_BLDAT, BUDAT AS PostingDateInTheDocument_BUDAT,
+  MONAT AS FiscalPeriod_MONAT, CPUDT AS DayOnWhichAccountingDocumentWasEntered_CPUDT, CPUTM AS TimeOfEntry_CPUTM,
+  AEDAT AS DateOfTheLastDocumentChangeByTransaction_AEDAT, UPDDT AS DateOfTheLastDocumentUpdate_UPDDT,
+  WWERT AS TranslationDate_WWERT, USNAM AS UserName_USNAM, TCODE AS TransactionCode_TCODE,
+  BVORG AS NumberOfACrossCompanyCodePostingTransaction_BVORG, XBLNR AS ReferenceDocumentNumber_XBLNR,
+  DBBLG AS RecurringEntryDocumentNumber_DBBLG, STBLG AS ReverseDocumentNumber_STBLG, STJAH AS ReverseDocumentFiscalYear_STJAH,
+  BKTXT AS DocumentHeaderText_BKTXT, WAERS AS Currency_WAERS, KURSF AS ExchangeRate_KURSF,
+  KZWRS AS CurrencyForTheGroupCurrency_KZWRS, KZKRS AS GroupCurrencyExchangeRate_KZKRS, BSTAT AS DocumentStatus_BSTAT,
+  XNETB AS Indicator_DocumentPostedNet_XNETB, FRATH AS UnplannedDeliveryCosts_FRATH,
+  XRUEB AS Indicator_DocumentIsPostedToAPreviousPeriod_XRUEB, GLVOR AS BusinessTransaction_GLVOR,
+  GRPID AS BatchInputSessionName_GRPID, DOKID AS DocumentNameInTheArchiveSystem_DOKID, ARCID AS ExtractIdDocumentHeader_ARCID,
+  IBLAR AS InternalDocumentTypeForDocumentControl_IBLAR, AW AS Object_AW,
+  FIKRS AS FinancialManagementArea_FIKRS, HWAER AS LocalCurrency_HWAER, HWAE2 AS CurrencyOfSecondLocalCurrency_HWAE2,
+  HWAE3 AS CurrencyOfThirdLocalCurrency_HWAE3, KURS2 AS ExchangeRateForTheSecondLocalCurrency_KURS2,
+  KURS3 AS ExchangeRateForTheThirdLocalCurrency_KURS3, BASW2 AS SourceCurrencyForCurrencyTranslation_BASW2,
+  BASW3 AS SourceCurrencyForCurrencyTranslation_BASW3, UMRD2 AS TranslationDateTypeForSecondLocalCurrency_UMRD2,
+  UMRD3 AS TranslationDateTypeForThirdLocalCurrency_UMRD3, XSTOV AS Indicator_DocumentIsFlaggedForReversal_XSTOV,
+  STODT AS PlannedDateForTheReversePosting_STODT, XMWST AS CalculateTaxAutomatically_XMWST,
+  CURT2 AS CurrencyTypeOfSecondLocalCurrency_CURT2, CURT3 AS CurrencyTypeOfThirdLocalCurrency_CURT3,
+  KUTY2 AS ExchangeRateType_KUTY2, KUTY3 AS ExchangeRateType_KUTY3, XSNET AS GlAccountAmountsEnteredExcludeTax_XSNET,
+  AUSBK AS SourceCompanyCode_AUSBK, DUEFL AS StatusOfDataTransferIntoSubsequentRelease_DUEFL, AWSYS AS LogicalSystem_AWSYS, TXKRS AS ExchangeRateForTaxes_TXKRS,
+  CTXKRS AS RateForTaxValuesInLocalCurrency__plantsAbroad___CTXKRS, LOTKZ AS LotNumberForRequests_LOTKZ,
+  XWVOF AS Indicator_CustomerBillOfExchangePaymentBeforeDueDate_XWVOF, STGRD AS ReasonForReversal_STGRD,
+  PPNAM AS NameOfUserWhoParkedThisDocument_PPNAM, BRNCH AS BranchNumber_BRNCH, NUMPG AS NumberOfPagesOfInvoice_NUMPG,
+  ADISC AS Indicator_EntryRepresentsADiscountDocument_ADISC, XREF1_HD AS Reference1InternalForDocumentHeader_XREF1_HD,
+  XREF2_HD AS Reference2InternalForDocumentHeader_XREF2_HD, XREVERSAL AS SpecifiesWhetherDocIsReversalDocOrReversedDoc_XREVERSAL,
+  REINDAT AS InvoiceReceiptDate_REINDAT, RLDNR AS LedgerInGeneralLedgerAccounting_RLDNR, LDGRP AS LedgerGroup_LDGRP,
+  PROPMANO AS RealEstateManagementMandate_PROPMANO, XBLNR_ALT AS AlternativeReferenceNumber_XBLNR_ALT,
+  VATDATE AS TaxReportingDate_VATDATE, DOCCAT AS ClassificationOfAnFiDocument_DOCCAT,
+  XSPLIT AS FiDocumentOriginatesFromSplitPosting__indicator___XSPLIT, CASH_ALLOC AS CashRelevantDocument_CASH_ALLOC,
+  FOLLOW_ON AS FollowOnDocumentIndicator_FOLLOW_ON, XREORG AS DocContainsOpenItemThatWasTransferredDuringReorg_XREORG,
+  SUBSET AS DefinesSubsetOfComponentsForTheFicoInterface_SUBSET, KURST AS ExchangeRateType_KURST,
+  KURSX AS MarketDataExchangeRate_KURSX, KUR2X AS MarketDataExchangeRate2_KUR2X, KUR3X AS MarketDataExchangeRate3_KUR3X,
+  XMCA AS DocumentOriginatesFromMultiCurrencyAccounting_XMCA, RESUBMISSION AS DateOfResubmission_RESUBMISSION,
+  PSOTY AS DocumentCategoryPaymentRequests_PSOTY, PSOAK AS Reason_PSOAK,
+  PSOKS AS Region_PSOKS, PSOSG AS ReasonForReversalIsPsRequests_PSOSG, PSOFN AS IsPs_FileNumber_PSOFN,
+  INTFORM AS InterestFormula_INTFORM, INTDATE AS InterestCalcDate_INTDATE, PSOBT AS PostingDay_PSOBT,
+  PSOZL AS ActualPosting_PSOZL, PSODT AS DateOfLastChange_PSODT, PSOTM AS LastChangedAt_PSOTM,
+  FM_UMART AS TypeOfPaymentTransfer_FM_UMART, CCINS AS PaymentCards_CardType_CCINS, CCNUM AS PaymentCards_CardNumber_CCNUM,
+  SSBLK AS PaymentStatisticalSamplingBlock_SSBLK, BATCH AS LotNumberForDocuments_BATCH, SNAME AS UserName_SNAME,
+  SAMPLED AS SampledInvoiceByPaymentCertification_SAMPLED, EXCLUDE_FLAG AS PpaExcludeIndicator_EXCLUDE_FLAG,
+  BLIND AS BudgetaryLedgerIndicator_BLIND, OFFSET_STATUS AS TreasuryOffsetStatus_OFFSET_STATUS,
+  OFFSET_REFER_DAT AS DateRecordReferredToTreasury_OFFSET_REFER_DAT, PENRC AS ReasonForLatePayment_PENRC,
+  KNUMV AS NumberOfTheDocumentCondition_KNUMV,
+  ZUMSK AS TargetSpecialGlIndicator_ZUMSK,
+  GSBER AS BusinessArea_GSBER, PARGB AS TradingPartnerBusinessArea_PARGB, MWSKZ AS TaxOnSalespurchasesCode_MWSKZ,
+  QSSKZ AS WithholdingTaxCode_QSSKZ,
+  CASE
+    WHEN bseg.shkzg = 'S' THEN bseg.wrbtr  -- S = Debit | Amount in document currency
+    WHEN bseg.shkzg = 'H' THEN bseg.wrbtr * -1  -- H = Credit | Amount in document currency
+    ELSE bseg.wrbtr
+  END AS AmountInDocumentCurrency_bseg_wrbtr,
+  CASE
+    WHEN bseg.shkzg = 'S' THEN bseg.dmbtr  -- S = Debit | Amount in document currency
+    WHEN bseg.shkzg = 'H' THEN bseg.dmbtr * -1  -- H = Credit | Amount in document currency
+    ELSE bseg.dmbtr
+  END AS AmountInLocalCurrency_bseg_dmbtr,
+  KZBTR AS OriginalReductionAmountInLocalCurrency_KZBTR, PSWBT AS AmountForUpdatingInGeneralLedger_PSWBT,
+  PSWSL AS UpdateCurrencyForGeneralLedgerTransactionFigures_PSWSL, TXBHW AS OriginalTaxBaseAmountInLocalCurrency_TXBHW,
+  TXBFW AS OriginalTaxBaseAmountInDocumentCurrency_TXBFW, MWSTS AS TaxAmountInLocalCurrency_MWSTS,
+  WMWST AS TaxAmountInDocumentCurrency_WMWST, HWBAS AS TaxBaseAmountInLocalCurrency_HWBAS,
+  FWBAS AS TaxBaseAmountInDocumentCurrency_FWBAS, HWZUZ AS ProvisionAmountInLocalCurrency_HWZUZ,
+  FWZUZ AS AdditionalTaxInDocumentCurrency_FWZUZ, SHZUZ AS DebitcreditAdditionForCashDiscount_SHZUZ,
+  STEKZ AS VersionNumberComponent_STEKZ, MWART AS TaxType_MWART, TXGRP AS GroupIndicatorForTaxLineItems_TXGRP,
+  KTOSL AS Transaction_KTOSL, QSSHB AS WithholdingTaxBaseAmount_QSSHB, KURSR AS HedgedExchangeRate_KURSR,
+  GBETR AS HedgedAmountInForeignCurrency_GBETR, BDIFF AS ValuationDifference_BDIFF,
+  BDIF2 AS ValuationDifferenceForTheSecondLocalCurrency_BDIF2, VALUT AS ValueDate_VALUT, ZUONR AS AssignmentNumber_ZUONR,
+  SGTXT AS ItemText_SGTXT, ZINKZ AS ExemptedFromInterestCalculation_ZINKZ, VBUND AS CompanyIdOfTradingPartner_VBUND,
+  BEWAR AS TransactionType_BEWAR, ALTKT AS GroupAccountNumber_ALTKT, VORGN AS TransactionTypeForGeneralLedger_VORGN,
+  FDLEV AS PlanningLevel_FDLEV, FDGRP AS PlanningGroup_FDGRP, FDWBT AS PlannedAmountInDocumentOrGlAccountCurrency_FDWBT,
+  FDTAG AS PlanningDate_FDTAG, FKONT AS FinancialBudgetItem_FKONT, KOKRS AS ControllingArea_KOKRS,
+  KOSTL AS CostCenter_KOSTL, PROJN AS Old_ProjectNumberPs_posnr_PROJN, AUFNR AS OrderNumber_AUFNR,
+  VBELN AS BillingDocument_VBELN, VBEL2 AS SalesDocument_VBEL2, POSN2 AS SalesDocumentItem_POSN2,
+  ETEN2 AS ScheduleLineNumber_ETEN2, ANLN1 AS MainAssetNumber_ANLN1, ANLN2 AS AssetSubnumber_ANLN2,
+  ANBWA AS AssetTransactionType_ANBWA, BZDAT AS AssetValueDate_BZDAT, PERNR AS PersonnelNumber_PERNR,
+  XUMSW AS Indicator_SalesRelatedItem_XUMSW, XHRES AS Indicator_ResidentGlAccount_XHRES,
+  XKRES AS Indicator_CanLineItemsBeDisplayedByAccount_XKRES, XOPVW AS Indicator_OpenItemManagement_XOPVW,
+  XCPDD AS Indicator_AddressAndBankDataSetIndividually_XCPDD, XSKST AS Indicator_StatisticalPostingToCostCenter_XSKST,
+  XSAUF AS Indicator_PostingToOrderIsStatistical_XSAUF, XSPRO AS Indicator_PostingToProjectIsStatistical_XSPRO,
+  XSERG AS Indicator_PostingToProfitabilityAnalysisIsStatistical_XSERG, XFAKT AS Indicator_BillingDocumentUpdateSuccessful_XFAKT,
+  XUMAN AS Indicator_TransferPostingFromDownPayment_XUMAN, XANET AS Indicator_DownPaymentInNetProcedure_XANET,
+  XSKRL AS Indicator_LineItemNotLiableToCashDiscount_XSKRL, XINVE AS Indicator_CapitalGoodsAffected_XINVE,
+  XPANZ AS DisplayItem_XPANZ, XAUTO AS Indicator_LineItemAutomaticallyCreated_XAUTO, XNCOP AS Indicator_ItemsCannotBeCopied_XNCOP,
+  XZAHL AS Indicator_IsPostingUsedInAPaymentTransaction_XZAHL, SAKNR AS GlAccountNumber_SAKNR,
+  HKONT AS GeneralLedgerAccount_HKONT, KUNNR AS CustomerNumber_KUNNR, LIFNR AS AccountNumberOfVendorOrCreditor_LIFNR,
+  FILKD AS AccountNumberOfTheBranch_FILKD, XBILK AS Indicator_AccountIsABalanceSheetAccount_XBILK,
+  GVTYP AS PLStatementAccountType_GVTYP, HZUON AS AssignmentNumberForSpecialGlAccounts_HZUON,
+  ZFBDT AS BaselineDateForDueDateCalculation_ZFBDT, ZTERM AS TermsOfPayment_ZTERM, ZBD1T AS CashDiscountDays1_ZBD1T,
+  ZBD2T AS CashDiscountDays2_ZBD2T, ZBD3T AS NetPaymentTermsPeriod_ZBD3T, ZBD1P AS CashDiscountPercentage1_ZBD1P,
+  ZBD2P AS CashDiscountPercentage2_ZBD2P, SKFBT AS AmountEligibleForCashDiscountInDocumentCurrency_SKFBT,
+  SKNTO AS CashDiscountAmountInLocalCurrency_SKNTO, WSKTO AS CashDiscountAmountInDocumentCurrency_WSKTO,
+  ZLSCH AS PaymentMethod_ZLSCH, ZLSPR AS PaymentBlock_ZLSPR, ZBFIX AS FixedPaymentTerms_ZBFIX,
+  HBKID AS ShortForAHouseBank_HBKID, BVTYP AS PartnerBankType_BVTYP, NEBTR AS NetPaymentAmount_NEBTR,
+  MWSK1 AS TaxCodeForDistribution_MWSK1, DMBT1 AS AmountInLocalCurrencyForTaxDistribution_DMBT1,
+  WRBT1 AS AmountInForeignCurrencyForTaxBreakdown_WRBT1, MWSK2 AS TaxCodeForDistribution_MWSK2,
+  DMBT2 AS AmountInLocalCurrencyForTaxDistribution_DMBT2, WRBT2 AS AmountInForeignCurrencyForTaxBreakdown_WRBT2,
+  MWSK3 AS TaxCodeForDistribution_MWSK3, DMBT3 AS AmountInLocalCurrencyForTaxDistribution_DMBT3,
+  WRBT3 AS AmountInForeignCurrencyForTaxBreakdown_WRBT3, REBZG AS DocumentNoOfTheInvoiceToWhichTheTransactionBelongs_REBZG,
+  REBZJ AS FiscalYearOfTheRelevantInvoice__forCreditMemo___REBZJ, REBZZ AS LineItemInTheRelevantInvoice_REBZZ,
+  REBZT AS FollowOnDocumentType_REBZT, ZOLLT AS CustomsTariffNumber_ZOLLT, ZOLLD AS CustomsDate_ZOLLD,
+  LZBKZ AS StateCentralBankIndicator_LZBKZ, LANDL AS SupplyingCountry_LANDL, DIEKZ AS ServiceIndicator__foreignPayment___DIEKZ,
+  SAMNR AS InvoiceListNumber_SAMNR, ABPER AS SettlementPeriod_ABPER, VRSKZ AS InsuranceIndicator_VRSKZ,
+  VRSDT AS InsuranceDate_VRSDT, DISBN AS NumberOfBillOfExchangeUsageDocument__discountDoc___DISBN,
+  DISBJ AS FiscalYearOfBillOfExchangeUsageDocument_DISBJ, DISBZ AS LineItemWithinTheBillOfExchangeUsageDocument_DISBZ,
+  WVERW AS BillOfExchangeUsageType_WVERW, ANFBN AS DocumentNumberOfTheBillOfExchangePaymentRequest_ANFBN,
+  ANFBJ AS FiscalYearOfTheBillOfExchangePaymentRequestDocument_ANFBJ, ANFBU AS CompanyCodeInWhichBillOfExchPaymentRequestIsPosted_ANFBU,
+  ANFAE AS BillOfExchangePaymentRequestDueDate_ANFAE, BLNBT AS BaseAmountForDeterminingThePreferenceAmount_BLNBT,
+  BLNKZ AS SubsidyIndicatorForDeterminingTheReductionRates_BLNKZ, BLNPZ AS PreferencePercentageRate_BLNPZ,
+  MSCHL AS Dunning_MSCHL, MANSP AS DunningBlock_MANSP, MADAT AS DateOfLastDunningNotice_MADAT,
+  MANST AS DunningLevel_MANST, MABER AS DunningArea_MABER, ESRNR AS PorSubscriberNumber_ESRNR,
+  ESRRE AS PorReferenceNumber_ESRRE, ESRPZ AS PorCheckDigit_ESRPZ, KLIBT AS CreditControlAmount_KLIBT,
+  QSZNR AS CertificateNumberOfTheWithholdingTaxExemption_QSZNR, QBSHB AS WithholdingTaxAmount__inDocumentCurrency___QBSHB,
+  QSFBT AS WithholdingTaxExemptAmount__inDocumentCurrency___QSFBT, NAVHW AS NonDeductibleInputTax__inLocalCurrency___NAVHW,
+  NAVFW AS NonDeductibleInputTax__inDocumentCurrency___NAVFW, MATNR AS MaterialNumber_MATNR, WERKS AS Plant_WERKS,
+  MENGE AS Quantity_MENGE, MEINS AS BaseUnitOfMeasure_MEINS, ERFMG AS QuantityInUnitOfEntry_ERFMG,
+  ERFME AS UnitOfEntry_ERFME, BPMNG AS QuantityInPurchaseOrderPriceUnit_BPMNG, BPRME AS OrderPriceUnit__purchasing___BPRME,
+  EBELN AS PurchasingDocumentNumber_EBELN, EBELP AS ItemNumberOfPurchasingDocument_EBELP,
+  ZEKKN AS SequentialNumberOfAccountAssignment_ZEKKN, ELIKZ AS DeliveryCompletedIndicator_ELIKZ,
+  VPRSV AS PriceControlIndicator_VPRSV, PEINH AS PriceUnit_PEINH, BW AS ValuationArea_BW,
+  BWTAR AS ValuationType_BWTAR, BUSTW AS PostingStringForValues_BUSTW, REWRT AS InvoiceValueEntered__inLocalCurrency___REWRT,
+  REWWR AS InvoiceValueInForeignCurrency_REWWR, BONFB AS AmountQualifyingForBonusInLocalCurrency_BONFB,
+  BUALT AS AmountPostedInAlternativePriceControl_BUALT, PSALT AS AlternativePriceControl_PSALT, NPREI AS NewPrice_NPREI,
+  TBTKZ AS Indicator_SubsequentDebitcredit_TBTKZ, SPGRP AS BlockingReason_Price_SPGRP, SPGRM AS BlockingReason_Quantity_SPGRM,
+  SPGRT AS BlockingReason_Date_SPGRT, SPGRG AS BlockingReason_OrderPriceQuantity_SPGRG,
+  SPGRV AS BlockingReason_ProjectBudget_SPGRV, SPGRQ AS ManualBlockingReason_SPGRQ, STCEG AS VatRegistrationNumber_STCEG,
+  EGBLD AS CountryOfDestinationForDeliveryOfGoods_EGBLD, EGLLD AS SupplyingCountryForDeliveryOfGoods_EGLLD,
+  RSTGR AS ReasonCodeForPayments_RSTGR, RYACQ AS YearOfAcquisition_RYACQ, RPACQ AS PeriodOfAcquisition_RPACQ,
+  RDIFF AS ExchangeRateGainlossRealized_RDIFF, RDIF2 AS ExchangeRateDifferenceRealizedForSecondLocalCurrency_RDIF2,
+  PRCTR AS ProfitCenter_PRCTR, XHKOM AS Indicator_GlAccountAssignedManually_XHKOM, VNAME AS JointVenture_VNAME,
+  RECID AS RecoveryIndicator_RECID, EGRUP AS EquityGroup_EGRUP, VPTNR AS PartnerAccountNumber_VPTNR,
+  VERTT AS ContractType_VERTT, VERTN AS ContractNumber_VERTN, VBEWA AS FlowType_VBEWA, DEPOT AS SecuritiesAccount_DEPOT,
+  TXJCD AS TaxJurisdiction_TXJCD, IM AS InternalForRealEstateObject_IM, DABRZ AS ReferenceDateForSettlement_DABRZ,
+  POPTS AS RealEstateOptionRate_POPTS, FIPOS AS CommitmentItem_FIPOS, KSTRG AS CostObject_KSTRG,
+  NPLNR AS NetworkNumberForAccountAssignment_NPLNR, AUFPL AS TaskListNumberForOperationsInOrder_AUFPL,
+  APLZL AS GeneralCounterForOrder_APLZL, PROJK AS WorkBreakdownStructureElement__wbsElement___PROJK,
+  PAOBJNR AS ProfitabilitySegmentNumber__coPa___PAOBJNR, PASUBNR AS ProfitabilitySegmentChanges__coPa___PASUBNR,
+  SPGRS AS BlockingReason_ItemAmount_SPGRS, SPGRC AS BlockingReason_Quality_SPGRC, BTYPE AS PayrollType_BTYPE,
+  ETYPE AS EquityType_ETYPE, XEGDR AS Indicator_TriangularDealWithinTheEu_XEGDR,
+  LNRAN AS SequenceNumberOfAssetLineItemsInFiscalYear_LNRAN, HRKFT AS OriginGroupAsSubdivisionOfCostElement_HRKFT,
+  DMBE2 AS AmountInSecondLocalCurrency_DMBE2, DMBE3 AS AmountInThirdLocalCurrency_DMBE3,
+  DMB21 AS AmountInSecondLocalCurrencyForTaxBreakdown_DMB21, DMB22 AS AmountInSecondLocalCurrencyForTaxBreakdown_DMB22,
+  DMB23 AS AmountInSecondLocalCurrencyForTaxBreakdown_DMB23, DMB31 AS AmountInThirdLocalCurrencyForTaxBreakdown_DMB31,
+  DMB32 AS AmountInThirdLocalCurrencyForTaxBreakdown_DMB32, DMB33 AS AmountInThirdLocalCurrencyForTaxBreakdown_DMB33,
+  MWST2 AS TaxAmountInSecondLocalCurrency_MWST2, MWST3 AS TaxAmountInThirdLocalCurrency_MWST3,
+  NAVH2 AS NonDeductibleInputTaxInSecondLocalCurrency_NAVH2, NAVH3 AS NonDeductibleInputTaxInThirdLocalCurrency_NAVH3,
+  SKNT2 AS CashDiscountAmountInSecondLocalCurrency_SKNT2, SKNT3 AS CashDiscountAmountInThirdLocalCurrency_SKNT3,
+  BDIF3 AS ValuationDifferenceForTheThirdLocalCurrency_BDIF3, RDIF3 AS ExchangeRateDifferenceRealizedForThirdLocalCurrency_RDIF3,
+  HWMET AS MethodWithWhichTheLocalCurrencyAmountWasDetermined_HWMET, GLUPM AS UpdateMethodForFmFiCaIntegration_GLUPM,
+  XRAGL AS Indicator_ClearingWasReversed_XRAGL, UZAWE AS PaymentMethodSupplement_UZAWE,
+  LOKKT AS AlternativeAccountNumberInCompanyCode_LOKKT, FISTL AS FundsCenter_FISTL, GEBER AS Fund_GEBER,
+  STBUK AS TaxCompanyCode_STBUK, TXBH2 AS TaxBaseoriginalTaxBaseInSecondLocalCurrency_TXBH2,
+  TXBH3 AS TaxBaseoriginalTaxBaseInThirdLocalCurrency_TXBH3, PPRCT AS PartnerProfitCenter_PPRCT,
+  XREF1 AS BusinessPartnerReference_XREF1, XREF2 AS BusinessPartnerReference_XREF2,
+  KBLNR AS DocumentNumberForEarmarkedFunds_KBLNR, KBLPOS AS EarmarkedFunds_DocumentItem_KBLPOS,
+  STTAX AS TaxAmountAsStatisticalInformationInDocumentCurrency_STTAX, FKBER AS FunctionalArea_FKBER,
+  OBZEI AS NumberOfLineItemInOriginalDocument_OBZEI, XNEGP AS Indicator_NegativePosting_XNEGP, RFZEI AS PaymentCardItem_RFZEI,
+  CCBTC AS PaymentCards_SettlementRun_CCBTC, KKBER AS CreditControlArea_KKBER, EMPFB AS Payeepayer_EMPFB,
+  XREF3 AS ReferenceForLineItem_XREF3, DTWS1 AS Instruction1_DTWS1, DTWS2 AS Instruction2_DTWS2,
+  DTWS3 AS Instruction3_DTWS3, DTWS4 AS Instruction4_DTWS4, GRICD AS ActivityCodeForGrossIncomeTax_GRICD,
+  GRIRG AS Region_GRIRG, GITYP AS DistributionTypeForEmploymentTax_GITYP,
+  XPYPR AS Indicator_ItemsFromPaymentProgramBlocked_XPYPR, KIDNO AS PaymentReference_KIDNO,
+  ABSBT AS CreditManagement_HedgedAmount_ABSBT, IDXSP AS InflationIndex_IDXSP, LINFV AS LastAdjustmentDate_LINFV,
+  KONTL AS AcctAssignmentStringForIndustrySpecificAcctAssignmnts_KONTL,
+  TXDAT AS DateForDefiningTaxRates_TXDAT, AGZEI AS ClearingItem_AGZEI, PYCUR AS CurrencyForAutomaticPayment_PYCUR,
+  PYAMT AS AmountInPaymentCurrency_PYAMT, BUPLA AS BusinessPlace_BUPLA, SECCO AS SectionCode_SECCO,
+  LSTAR AS ActivityType_LSTAR, CESSION_KZ AS AccountsReceivablePledgingIndicator_CESSION_KZ, PRZNR AS BusinessProcess_PRZNR,
+  PENLC2 AS PenaltyChargeAmountInSecondLocalCurrency_PENLC2, PENLC3 AS PenaltyChargeAmountInThirdLocalCurrency_PENLC3,
+  PENFC AS PenaltyChargeAmountInDocumentCurrency_PENFC, PENDAYS AS NumberOfDaysForPenaltyChargeCalculation_PENDAYS,
+  GRANT_NBR AS Grant_GRANT_NBR, SCTAX AS TaxPortionFiCaLocalCurrency_SCTAX,
+  FKBER_LONG AS FunctionalArea_FKBER_LONG, GMVKZ AS ItemIsInExecution_GMVKZ, SRTYPE AS TypeOfAdditionalReceivable_SRTYPE,
+  INTRENO AS InternalRealEstateMasterDataCode_INTRENO, MEASURE AS FundedProgram_MEASURE,
+  AUGGJ AS FiscalYearOfClearingDocument_AUGGJ, PPA_EX_IND AS PpaExcludeIndicator_PPA_EX_IND,
+  DOCLN AS SixCharacterPostingItemForLedger_DOCLN, SEGMENT AS SegmentForSegmentalReporting_SEGMENT,
+  PSEGMENT AS PartnerSegmentForSegmentalReporting_PSEGMENT, PFKBER AS PartnerFunctionalArea_PFKBER,
+  HKTID AS IdForAccountDetails_HKTID, KSTAR AS CostElement_KSTAR, XLGCLR AS ClearingSpecificToLedgerGroups_XLGCLR,
+  TAXPS AS TaxDocumentItemNumber_TAXPS, PAYS_PROV AS PaymentServiceProvider_PAYS_PROV,
+  PAYS_TRAN AS PaymentReferenceOfPaymentServiceProvider_PAYS_TRAN, MNDID AS UniqueReferenceToMandateForEachPayee_MNDID,
+  XFRGE_BSEG AS PaymentIsReleased_XFRGE_BSEG, SQUAN AS QuantitySign_SQUAN, RE_BUKRS AS CashLedger_CompanyCodeForExpenserevenue_RE_BUKRS,
+  RE_ACCOUNT AS CashLedger_ExpenseOrRevenueAccount_RE_ACCOUNT, PGEBER AS PartnerFund_PGEBER,
+  PGRANT_NBR AS PartnerGrant_PGRANT_NBR, BUDGET_PD AS Fm_BudgetPeriod_BUDGET_PD, PBUDGET_PD AS Fm_PartnerBudgetPeriod_PBUDGET_PD,
+  J_1TPBUPL AS BranchCode_J_1TPBUPL, PEROP_BEG AS BillingPeriodOfPerformanceStartDate_PEROP_BEG,
+  PEROP_END AS BillingPeriodOfPerformanceEndDate_PEROP_END, FASTPAY AS PpaFastPayIndicator_FASTPAY,
+  IGNR_IVREF AS Fmfg_IgnoreTheInvoiceReferenceDuringFiDocSplitting_IGNR_IVREF,
+  FMFGUS_ AS UnitedStatesFederalGovernmentFields_FMFGUS_, FMXDOCNR AS FmReferenceDocumentNumber_FMXDOCNR,
+  FMXYEAR AS FmReferenceYear_FMXYEAR, FMXDOCLN AS FmReferenceLineItem_FMXDOCLN,
+  FMXZEKKN AS FmReferenceSequenceAccountAssignment_FMXZEKKN, PRODPER AS ProductionMonth__dateToFindPeriodAndYear___PRODPER,
+  '  ' AS AccountAssignmentCategoryForIndustrySolution_KONTT, -- noqa: disable=L039
+  '                                                  ' AS AcctAssignmentStringForIndustrySpecificAcctAssignmnts_KONTL,
+  '     '      AS ReferenceProcedure_AWTYP,
+  '          ' AS re_account,
+  '00000000'   AS uebgdat,
+  '          ' AS logsystem_sender,
+  '    '       AS bukrs_sender,
+  '          ' AS belnr_sender,
+  '0000'       AS gjahr_sender,
+  '000'        AS buzei_sender,
+  '          ' AS bdgt_account
+  FROM {{ project_id_src }}.{{ dataset_cdc_processed }}.bsad_bck WHERE xarch = 'X' -- noqa: enable=L039
+  UNION ALL
+{% endif %}
+>>>>>>> main
 SELECT BKPF.MANDT AS Client_MANDT, BKPF.BUKRS AS CompanyCode_BUKRS, BKPF.BELNR AS AccountingDocumentNumber_BELNR, BKPF.GJAHR AS FiscalYear_GJAHR,
   BSEG.BUZEI AS NumberOfLineItemWithinAccountingDocument_BUZEI, BSEG.BUZID AS IdentificationOfTheLineItem_BUZID,
   BSEG.AUGDT AS ClearingDate_AUGDT, BSEG.AUGCP AS ClearingEntryDate_AUGCP, BSEG.AUGBL AS DocumentNumberOfTheClearingDocument_AUGBL,
@@ -402,10 +613,18 @@ SELECT BKPF.MANDT AS Client_MANDT, BKPF.BUKRS AS CompanyCode_BUKRS, BKPF.BELNR A
   BSEG.XLGCLR AS ClearingSpecificToLedgerGroups_XLGCLR, BSEG.TAXPS AS TaxDocumentItemNumber_TAXPS, BSEG.PAYS_PROV AS PaymentServiceProvider_PAYS_PROV,
   BSEG.PAYS_TRAN AS PaymentReferenceOfPaymentServiceProvider_PAYS_TRAN, BSEG.MNDID AS UniqueReferenceToMandateForEachPayee_MNDID,
   BSEG.XFRGE_BSEG AS PaymentIsReleased_XFRGE_BSEG, BSEG.SQUAN AS QuantitySign_SQUAN,
+<<<<<<< HEAD
   BSEG.ZZSPREG AS SpecialRegion_ZZSPREG, BSEG.ZZBUSPARTN AS BusinessPartner_ZZBUSPARTN, BSEG.ZZCHAN AS DistributionChannel_ZZCHAN,
   BSEG.ZZPRODUCT AS ProductGroup_ZZPRODUCT, BSEG.ZZLOCA AS City_ZZLOCA, BSEG.ZZLOB AS BusinessLine_ZZLOB,
   BSEG.ZZUSERFLD1 AS Territory_ZZUSERFLD1, BSEG.ZZUSERFLD2 AS Ownercont_ZZUSERFLD2, BSEG.ZZUSERFLD3 AS Vein_ZZUSERFLD3,
   BSEG.ZZSTATE AS StateprovinceCode_ZZSTATE, BSEG.ZZREGION AS Location_ZZREGION, BSEG.RE_BUKRS AS CashLedger_CompanyCodeForExpenserevenue_RE_BUKRS,
+=======
+  -- BSEG.ZZSPREG AS SpecialRegion_ZZSPREG, BSEG.ZZBUSPARTN AS BusinessPartner_ZZBUSPARTN, BSEG.ZZCHAN AS DistributionChannel_ZZCHAN,
+  -- BSEG.ZZPRODUCT AS ProductGroup_ZZPRODUCT, BSEG.ZZLOCA AS City_ZZLOCA, BSEG.ZZLOB AS BusinessLine_ZZLOB,
+  -- BSEG.ZZUSERFLD1 AS Territory_ZZUSERFLD1, BSEG.ZZUSERFLD2 AS Ownercont_ZZUSERFLD2, BSEG.ZZUSERFLD3 AS Vein_ZZUSERFLD3,
+  -- BSEG.ZZSTATE AS StateprovinceCode_ZZSTATE, BSEG.ZZREGION AS Location_ZZREGION, 
+  BSEG.RE_BUKRS AS CashLedger_CompanyCodeForExpenserevenue_RE_BUKRS,
+>>>>>>> main
   BSEG.RE_ACCOUNT AS CashLedger_ExpenseOrRevenueAccount_RE_ACCOUNT, BSEG.PGEBER AS PartnerFund_PGEBER,
   BSEG.PGRANT_NBR AS PartnerGrant_PGRANT_NBR, BSEG.BUDGET_PD AS Fm_BudgetPeriod_BUDGET_PD,
   BSEG.PBUDGET_PD AS Fm_PartnerBudgetPeriod_PBUDGET_PD, BSEG.J_1TPBUPL AS BranchCode_J_1TPBUPL, BSEG.PEROP_BEG AS BillingPeriodOfPerformanceStartDate_PEROP_BEG,
@@ -425,6 +644,7 @@ SELECT BKPF.MANDT AS Client_MANDT, BKPF.BUKRS AS CompanyCode_BUKRS, BKPF.BELNR A
     WHEN bseg.shkzg = 'S' THEN bseg.wrbtr  -- S = Debit | Amount in document currency
     WHEN bseg.shkzg = 'H' THEN bseg.wrbtr * -1  -- H = Credit | Amount in document currency
     ELSE bseg.wrbtr
+<<<<<<< HEAD
   END AS AmountInDocumentCurrency_wrbtr --##S4##,
 --##S4##  BSEG.re_account,
 --##S4##    '00000000' as uebgdat,
@@ -434,6 +654,18 @@ SELECT BKPF.MANDT AS Client_MANDT, BKPF.BUKRS AS CompanyCode_BUKRS, BKPF.BELNR A
 --##S4##    '0000'       as gjahr_sender,
 --##S4##    '000'        as buzei_sender,
 --##S4## BSEG.BDGT_ACCOUNT, 
+=======
+  END AS AmountInDocumentCurrency_wrbtr{% if sql_flavour.upper() == 'S4' %},
+    BSEG.re_account,
+    '00000000' AS uebgdat, -- noqa: disable=L039
+    '          ' AS logsystem_sender,
+    '    '       AS bukrs_sender,
+    '          ' AS belnr_sender,
+    '0000'       AS gjahr_sender,
+    '000'        AS buzei_sender,
+    BSEG.BDGT_ACCOUNT -- noqa: enable=L039
+  {% endif %}
+>>>>>>> main
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.bkpf` AS bkpf
 LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.bseg` AS bseg
   ON bkpf.mandt = bseg.mandt
@@ -442,5 +674,12 @@ LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.bseg` AS bseg
     AND bkpf.belnr = bseg.belnr
 WHERE bseg.koart = 'D'
   AND bseg.augbl IS NULL
+<<<<<<< HEAD
 --##S4## and bseg.h_bstat <> 'D'
 --##S4## and bseg.h_bstat <> 'M'
+=======
+  {% if sql_flavour.upper() == 'S4' %}
+    AND bseg.h_bstat != 'D'
+    AND bseg.h_bstat != 'M'
+  {% endif %}
+>>>>>>> main

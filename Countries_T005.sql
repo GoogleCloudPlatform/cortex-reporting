@@ -34,8 +34,7 @@ SELECT T005.MANDT AS Client_MANDT, T005.LAND1 AS CountryKey_LAND1, T005T.LANDX A
   T005.CURIN AS CurrencyKeyOfTheIndexBasedCurrency_CURIN, T005.CURHA AS CurrencyKeyOfTheHardCurrency_CURHA, T005.WAERS AS CountryCurrency_WAERS, T005.KURST AS ExchangeRateTypeForTranslationIntoCountryCurrency_KURST,
   T005.AFAPL AS ChartOfDepreciatonForAssetValuation_AFAPL, T005.GWGWRT AS MaximumLowValueAssetAmount_GWGWRT, T005.UMRWRT AS NetBookValueForChangeoverOfDepreciationMethod_UMRWRT,
   T005.KZRBWB AS IndicatorPostNetBookValueForRetirement_KZRBWB, T005.XANZUM AS IndicatorTransferDownPaymentsFromPreviousYears_XANZUM, T005.CTNCONCEPT AS WithholdingTaxCertificateNumbering_Concepts_CTNCONCEPT,
-  T005.KZSRV AS TaxesAtIndividualServiceLevel_KZSRV, T005.XXINVE AS Indicator_DisplayCapitalGoodsIndicator_XXINVE, T005.SUREG AS SuperRegionPerCountry_SUREG,
-  T005.LANDGRP_VP AS CountryGroupingForShippingSchedule_LANDGRP_VP
+  T005.KZSRV AS TaxesAtIndividualServiceLevel_KZSRV, T005.XXINVE AS Indicator_DisplayCapitalGoodsIndicator_XXINVE, T005.SUREG AS SuperRegionPerCountry_SUREG
 FROM {{ project_id_src }}.{{ dataset_cdc_processed }}.t005 AS T005
 INNER JOIN {{ project_id_src }}.{{ dataset_cdc_processed }}.t005t AS T005T
   ON T005.mandt = t005t.mandt AND t005.land1 = t005t.land1

@@ -12,15 +12,17 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CompaniesMD`
+CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.RegionsMD`
 OPTIONS(
-description = "Company Master Data"
+description="Region Details"
 )
 AS
+
 {% if sql_flavour == 's4' -%}
-{% include './s4/CompaniesMD.sql' %}
+{% include './s4/RegionsMD.sql' %}
 {% else -%}
-{% include './ecc/CompaniesMD.sql' %}
+{% include './ecc/RegionsMD.sql' %}
 {% endif -%}
+
 ;
+
