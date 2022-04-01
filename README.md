@@ -1,16 +1,6 @@
-[![pipeline status](http://git.kittycorns.dev/core-tex-glaring/sap-reporting/badges/main/pipeline.svg)](http://git.kittycorns.dev/core-tex-glaring/sap-reporting/-/commits/main)
-
-
 # SAP Reporting
 
-Operational reporting templates for Cortex Data Foundation (formerly known as Lucia's views)
-
-This is a list of views that have been tested in a demo environment.
-
-Contents:
-
-[[_TOC_]]
-
+Templates for SAP reporting (and more!) for Google Cloud Cortex Data Foundation
 
 ## Variables
 
