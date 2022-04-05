@@ -10,7 +10,7 @@ SELECT
   CompaniesMD.CityName_ORT01 AS Company_City,
   CustomersMD.CountryKey_LAND1,
   CustomersMD.City_ORT01,
-  AccountingDocuments.AccountingDocumentNum ber_BELNR,
+  AccountingDocuments.AccountingDocumentNumber_BELNR,
   AccountingDocuments.NumberOfLineItemWithinAccountingDocument_BUZEI,
   AccountingDocuments.CurrencyKey_WAERS,
   AccountingDocuments.LocalCurrency_HWAER,
