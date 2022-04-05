@@ -58,4 +58,4 @@ INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.adr6` AS ADR6 ON ad
 LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.adrct` AS ADRCT ON adrc.client = adrct.client AND adrc.addrnumber = adrct.addrnumber AND adrc.langu = adrct.langu
   AND adrc.date_from = adrct.date_from
 #LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.adrt` as ADRT on adrc.client  = adrct.client and adrc.addrnumber = adrt.addrnumber and adrc.langu = adrt.langu
-WHERE cast(adrc.date_to AS STRING ) = '99991231'
+WHERE cast(adrc.date_to AS STRING ) = '9999-12-31'
