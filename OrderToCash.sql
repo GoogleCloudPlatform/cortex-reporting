@@ -48,9 +48,9 @@ OneTouchOrder AS (
     lips.recordstamp RecordTimeStamp_lips,
     COUNT(*) OneTouchOrderCount
   FROM
-    `{{ project_id_tgt }}.{{ dataset_raw_landing }}.vbap` vbap,
-    `{{ project_id_tgt }}.{{ dataset_raw_landing }}.vbep` vbep,
-    `{{ project_id_tgt }}.{{ dataset_raw_landing }}.lips` lips
+    `{{ project_id_src }}.{{ dataset_raw_landing }}.vbap` vbap,
+    `{{ project_id_src }}.{{ dataset_raw_landing }}.vbep` vbep,
+    `{{ project_id_src }}.{{ dataset_raw_landing }}.lips` lips
   WHERE
     vbap.mandt=vbep.mandt
     AND vbap.vbeln = vbep.vbeln
