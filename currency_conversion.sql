@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION `{{ project_id_src }}.{{ dataset_reporting_tgt }}.Currency_Conversion`(ip_mandt STRING, ip_kurst STRING, ip_fcurr STRING, ip_tcurr STRING, ip_date DATE, ip_amount NUMERIC) AS ((
+CREATE OR REPLACE FUNCTION `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Currency_Conversion`(ip_mandt STRING, ip_kurst STRING, ip_fcurr STRING, ip_tcurr STRING, ip_date DATE, ip_amount NUMERIC) AS ((
     SELECT
       CASE
         WHEN ukurs < 0 THEN (1 / ABS(ukurs)) * ip_amount
