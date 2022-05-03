@@ -42,7 +42,7 @@ AGGVBEP AS (
     POSNR,
     SUM(BMENG) AS ConfirmedOrderQuantity_BMENG
   FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbep`
-  GROUP BY 1, 2, 3
+  GROUP BY MANDT, VBELN, POSNR
 ),
 
 AGGVBPAITEM AS (

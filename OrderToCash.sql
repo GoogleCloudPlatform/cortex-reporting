@@ -63,7 +63,7 @@ OneTouchOrder AS (
   HAVING
     COUNT(*)<2 ) OneTouchOrder
  JOIN
-  `{{ project_id_tgt }}.{{ dataset_raw_landing }}.vbrp` AS VBRP
+  `{{ project_id_src }}.{{ dataset_raw_landing }}.vbrp` AS VBRP
  ON
    OneTouchOrder.VBAPClient_MANDT=vbrp.mandt
   AND OneTouchOrder.VBAPSalesDocument_VBELN = vbrp.aubel

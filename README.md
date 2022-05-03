@@ -2,9 +2,15 @@
 
 Templates for SAP reporting (and more!) for Google Cloud Cortex Data Foundation
 
+## Deployment
+
+We recommend looking at the instructions in the parent module, the [Cortex Data Foundation](https://github.com/GoogleCloudPlatform/cortex-data-foundation). You will find instructions and details on the parameters for the deployment there.
+
+Individual views can be deployed with `cloudbuild.reporting.yaml` using the same parameters as described in the parent module. 
+
 ## Variables
 
-This table describe the required variablas and their uses
+This table describe the required variables for the Jinja templates and their uses
 
 | Name                  | Description | Mandatory | Default Value |
 |-----------------------|-------------|-----------|---------------|
@@ -75,96 +81,3 @@ for f in *.sql; do
     jinja -d data.json -o "output/${f}" "${f}"
 done
 ```
-
-## Testing
-
-This goes over the testing framework for this module.
-### Running tests 
-
-Get bats version >= 1.5.0
-
-```shell
-mkdir -p tests/test_helper
-git clone https://github.com/bats-core/bats-core.git tests/bats                       
-git clone https://github.com/bats-core/bats-support.git tests/test_helper/bats-support
-git clone https://github.com/bats-core/bats-assert.git tests/test_helper/bats-assert
-
-cd tests/bats
-sudo ./install.sh /usr
-```
-
-Run the tests
-
-```shell
-tests/tests.sh
-```
-
-Log files are generated under `tests/logs/{date}.log`
-
-### Adding tests
-
-1. Create a file under `tests/resources`
-2. Write your tests in the following format
-
-```sql
----description:title
-VALID_ASSERTION_SQL_QUERY
-```
-The framework expects SQLs to be written as assertions.
-The assertions must be prefaced with `---description:` followed by the title of the test cases
-
-#### Examples
-Here is an example:
-Assume you have the following already created in BigQuery:
-```sql
-create or replace  table `myprojectid.simpletest.something` (
-    id INTEGER,
-    name STRING,
-)
-
-insert into simpletest.something (id, name) values (1, "blue") ; 
-insert into simpletest.something (id, name) values (2, "cat") ; 
-insert into simpletest.something (id, name) values (3, "horse") ; 
-insert into simpletest.something (id, name) values (4, "sky") ; 
-insert into simpletest.something (id, name) values (5, "red") ; 
-insert into simpletest.something (id, name) values (6, "green") ; 
-insert into simpletest.something (id, name) values (7, "tiger") ; 
-```
-We can go ahead and create two files with the following contents:
-tests/resources/query1.sql
-```sql
----description:test1 description
-assert ( SELECT id from myprojectid.simpletest.something where name = 'red' ) = 5 ;
----description:test2 with kitties
-assert ( SELECT id from myprojectid.simpletest.something where name = 'tiger' ) = 7
-```
-
-tests/resources/query2.sql
-```sql
----description:test 3 something something
-assert (
-    SELECT id from
-        myprojectid.simpletest.something
-    where name = 'sky'
-    ) = 4
-
----description:test 4 
-assert (
-    SELECT name from
-        myprojectid.simpletest.something
-    where id = 3
-    ) = 'horse'
-```
-
-To execute the tests  run the `tests/tests.sh` script
-
-### Parametrization
-
-You should parametrize your tests using jinja syntax. The variables are interpolated 
-from the file `tests/resources/data.json` here is an example:
-```sql
----description:test2 with kitties
-assert ( SELECT id from {{ project }}.{{ dataset }}.something where name = 'tiger' ) = 7
-```
-
-This follows the exact same format as the development `data.json` and allows for adding variables that are specific to test cases if needed.
