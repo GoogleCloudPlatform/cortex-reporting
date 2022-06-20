@@ -5,8 +5,8 @@ SELECT
   KNA1.NAME1 AS Name1_NAME1,
   KNA1.NAME2 AS Name2_NAME2,
   KNA1.ORT01 AS City_ORT01,
-  KNA1.PSTLZ AS PostalCode_PSTLZ,
-  KNA1.REGIO AS CustomerRegion_REGIO,
+  COALESCE(KNA1.PSTLZ, ADRC.POST_CODE1) AS PostalCode_PSTLZ,
+  COALESCE(KNA1.REGIO, ADRC.REGION) AS CustomerRegion_REGIO,
   KNA1.SORTL AS SortField_SORTL,
   KNA1.STRAS AS StreetAndNumber_STRAS,
   KNA1.TELF1 AS FirstTelephoneNumber_TELF1,
@@ -173,8 +173,6 @@ SELECT
   KNA1.PSOO3 AS Description_PSOO3,
   KNA1.PSOO4 AS Description_PSOO4,
   KNA1.PSOO5 AS Description_PSOO5,
-  --KNA1.OIDRC AS DifferentialReferenceCode_OIDRC,
-  --KNA1.OID_POREQD AS PurchaseOrderRequired_POREQD,
   ADRC.DATE_FROM AS ValidFromDate_DATE_FROM,
   ADRC.NATION AS VersionIdForInternationalAddresses_NATION,
   ADRC.DATE_TO AS ValidToDate_DATE_TO,
@@ -232,8 +230,11 @@ SELECT
   ADRC.XPCPT AS BusinessPurposeCompletedFlag_XPCPT
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed }}.kna1` AS KNA1
-INNER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.adrc` AS ADRC
-  ON
-    KNA1.ADRNR = ADRC.ADDRNUMBER
-    AND KNA1.MANDT = ADRC.CLIENT
+LEFT OUTER JOIN
+  `{{ project_id_src }}.{{ dataset_cdc_processed }}.adrc` AS ADRC 
+ON
+  KNA1.ADRNR = ADRC.ADDRNUMBER
+  AND KNA1.MANDT = ADRC.CLIENT
+  AND ADRC.date_to = cast('9999-12-31' as DATE)
+ORDER BY
+  Client_MANDT

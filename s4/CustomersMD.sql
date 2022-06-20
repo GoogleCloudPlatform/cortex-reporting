@@ -5,8 +5,8 @@ SELECT
   KNA1.NAME1 AS Name1_NAME1,
   KNA1.NAME2 AS Name2_NAME2,
   KNA1.ORT01 AS City_ORT01,
-  KNA1.PSTLZ AS PostalCode_PSTLZ,
-  KNA1.REGIO AS CustomerRegion_REGIO,
+  COALESCE(KNA1.PSTLZ, ADRC.POST_CODE1) AS PostalCode_PSTLZ,
+  COALESCE(KNA1.REGIO, ADRC.REGION) AS CustomerRegion_REGIO,
   KNA1.SORTL AS SortField_SORTL,
   KNA1.STRAS AS StreetAndNumber_STRAS,
   KNA1.TELF1 AS FirstTelephoneNumber_TELF1,
@@ -95,7 +95,7 @@ SELECT
   KNA1.TXJCD AS TaxJurisdiction_TXJCD,
   KNA1.PERIV AS FiscalYearVariant_PERIV,
   KNA1.ABRVW AS UsageIndicator_ABRVW,
-  KNA1.INSPBYDEBI AS InspectionCarriedOutByCustomerINSPBYDEBI,
+  KNA1.INSPBYDEBI AS InspectionCarriedOutByCustomer_INSPBYDEBI,
   KNA1.INSPATDEBI AS InspectionForADeliveryNote_INSPATDEBI,
   KNA1.KTOCD AS ReferenceAccountGroup_KTOCD,
   KNA1.PFORT AS PoBoxCity_PFORT,
@@ -173,13 +173,11 @@ SELECT
   KNA1.PSOO3 AS Description_PSOO3,
   KNA1.PSOO4 AS Description_PSOO4,
   KNA1.PSOO5 AS Description_PSOO5,
-  --KNA1.OIDRC AS DifferentialReferenceCode_OIDRC,
-  --KNA1.OID_POREQD AS PurchaseOrderRequired_POREQD,
   ADRC.DATE_FROM AS ValidFromDate_DATE_FROM,
   ADRC.NATION AS VersionIdForInternationalAddresses_NATION,
   ADRC.DATE_TO AS ValidToDate_DATE_TO,
   ADRC.TITLE AS FormOfAddressKey_TITLE,
-  ADRC.NAME1 AS Addr__NAME1,
+  ADRC.NAME1 AS Addr_NAME1,
   ADRC.NAME2 AS Addr_NAME2,
   ADRC.NAME3 AS Addr_NAME3,
   ADRC.NAME4 AS Addr_NAME4,
@@ -197,7 +195,7 @@ SELECT
   ADRC.DONT_USE_P AS PoBoxAddressUndeliverableFlag_DONT_USE_P,
   ADRC.PO_BOX_NUM AS Flag_PoBoxWithoutNumber_PO_BOX_NUM,
   ADRC.PO_BOX_LOC AS PoBoxCity_PO_BOX_LOC,
-  ADRC.CITY_CODE2 AS CityPoBoxCode__CityFile___CITY_CODE2,
+  ADRC.CITY_CODE2 AS CityPoBoxCode_CityFile_CITY_CODE2,
   ADRC.PO_BOX_REG AS RegionForPoBox_PO_BOX_REG,
   ADRC.PO_BOX_CTY AS PoBoxCountry_PO_BOX_CTY,
   ADRC.TRANSPZONE AS TransportationZoneToOrFromWhichTheGoodsAreDelivered_TRANSPZONE,
@@ -210,13 +208,13 @@ SELECT
   ADRC.STR_SUPPL2 AS Street3_STR_SUPPL2,
   ADRC.STR_SUPPL3 AS Street4_STR_SUPPL3,
   ADRC.LOCATION AS Street5_LOCATION,
-  ADRC.BUILDING AS Building__NumberOrCode___BUILDING,
+  ADRC.BUILDING AS Building_NumberOrCode_BUILDING,
   ADRC.FLOOR AS FloorInBuilding_FLOOR,
   ADRC.ROOMNUMBER AS RoomOrAppartmentNumber_ROOMNUMBER,
   ADRC.COUNTRY AS CountryKey_COUNTRY,
   ADRC.LANGU AS Language_LANGU,
   ADRC.REGION AS Region__REGION,
-  ADRC.ADDR_GROUP AS AddressGroup__Key____BusinessAddressServices___ADDR_GROUP,
+  ADRC.ADDR_GROUP AS AddressGroup_Key_BusinessAddressServices_ADDR_GROUP,
   ADRC.FLAGGROUPS AS Flag_ThereAreMoreAddressGroupAssignments_FLAGGROUPS,
   ADRC.PERS_ADDR AS Flag_ThisIsAPersonalAddress_PERS_ADDR,
   ADRC.SORT1 AS SearchTerm1_SORT1,
@@ -231,8 +229,12 @@ SELECT
   ADRC.MC_TOWNSHIP AS TownshipNameInUpperCaseForSearchHelp_MC_TOWNSHIP,
   ADRC.XPCPT AS BusinessPurposeCompletedFlag_XPCPT
 FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.kna1` AS kna1
-INNER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.adrc` AS adrc
-  ON
-    kna1.ADRNR = adrc.Addrnumber AND kna1.mandt = adrc.client
+  `{{ project_id_src }}.{{ dataset_cdc_processed }}.kna1` AS KNA1
+LEFT OUTER JOIN
+  `{{ project_id_src }}.{{ dataset_cdc_processed }}.adrc` AS ADRC 
+ON
+  KNA1.ADRNR = ADRC.ADDRNUMBER
+  AND KNA1.MANDT = ADRC.CLIENT
+  AND ADRC.date_to = cast('9999-12-31' as DATE)
+ORDER BY
+  Client_MANDT
