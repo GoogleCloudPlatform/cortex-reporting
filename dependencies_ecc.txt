@@ -62,3 +62,7 @@ CostCenterAmountsHierarchy_SAMPLE.sql
 Billing.sql
 OrderToCash.sql
 AccountingDocumentsReceivables.sql
+HolidayCalendar.sql
+Trends.sql
+Weather.sql
+
