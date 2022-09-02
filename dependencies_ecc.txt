@@ -23,6 +23,7 @@ TelephoneCodes_T005K.sql
 CostCentersMD.sql
 SalesOrganizationsMD.sql
 SalesOrders.sql
+SalesOrders_V2.sql
 Regions_T005S.sql
 RegionsMD.sql
 SDDocumentFlow.sql
@@ -65,4 +66,5 @@ AccountingDocumentsReceivables.sql
 HolidayCalendar.sql
 Trends.sql
 Weather.sql
+WeatherDaily.sql
 
