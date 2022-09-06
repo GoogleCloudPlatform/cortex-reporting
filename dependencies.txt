@@ -11,6 +11,8 @@ CompaniesMD.sql
 ProductHierarchy_Flatten.sql
 TelephoneCodes_T005K.sql
 CostCentersMD.sql
+StorageLocationsMD.sql
+ValuationAreasMD.sql
 SalesOrders.sql
 Regions_T005S.sql
 SDDocumentFlow.sql
@@ -26,14 +28,16 @@ Languages_T002.sql
 SalesOrganizationsMD.sql
 MaterialsMD.sql
 MaterialTypesMD.sql
+BillOfMaterialsMD.sql
 CurrenciesMD.sql
 CurrencyConvUtil.sql
 ProfitCentersMD.sql
+ProductionOrders.sql
 POSchedule.sql
 Countries_T005.sql
 CustomerClearedItems_BSAD.sql
 CustomerOpenItems_BSID.sql
-GLDocumentHdr.sql
+GLDocumentsHdr.sql
 POVendorConfirmation.sql
 POOrderHistory.sql
 DeliveriesStatus_PerSalesOrg.sql
@@ -43,6 +47,7 @@ SalesFulfillment_perOrder.sql
 SalesFulfillment.sql
 Stock_Unrestricted_vs_Sales.sql
 Stock_NonValuated.sql
+Stock_PerPlant.sql
 UoMMD.sql
 UoMUsage_SAMPLE.sql
 InvoiceDocuments_Flow.sql

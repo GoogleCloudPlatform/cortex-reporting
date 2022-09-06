@@ -12,18 +12,21 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
+
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountingDocuments`
 OPTIONS(
 description = "Accounting Documents Headers and Items"
 )
 AS
-{% if sql_flavour == 's4' -%}
-(
-{% include './s4/AccountingDocuments.sql' %}
-)
-{% else -%}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+({% include './ecc/AccountingDocuments.sql' -%})
+{% endif -%}
 
-{% include './ecc/AccountingDocuments.sql' %}
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
 
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+({% include './s4/AccountingDocuments.sql' -%})
 {% endif -%}
 ;

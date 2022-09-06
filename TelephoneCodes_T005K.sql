@@ -16,13 +16,14 @@ OPTIONS(
   description = "Telephone Codes (T005)"
 )
 AS
-SELECT
-  T005K.MANDT AS Client_MANDT,
-  T005K.LAND1 AS CountryKey_LAND1,
-  T005K.TELEFFROM AS InternationalDialingCodeForTelephonefax_TELEFFROM,
-  T005K.TELEFTO AS CountryTelephonefaxDiallingCode_TELEFTO,
-  T005K.TELEFRM AS DigitToBeDeletedForCallsFromAbroad_TELEFRM,
-  T005K.TELEXFROM AS ForeignDiallingCodeForTelex_TELEXFROM,
-  T005K.TELEXTO AS ForeignDiallingCodeForTelex_TELEXTO,
-  T005K.MOBILE_SMS AS Indicator_MobileTelephonesAreSmsEnabledByDefault_MOBILE_SMS
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.t005k` AS T005K
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/TelephoneCodes_T005K.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/TelephoneCodes_T005K.sql' -%}
+{% endif -%}

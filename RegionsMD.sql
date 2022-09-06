@@ -14,15 +14,17 @@
 
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.RegionsMD`
 OPTIONS(
-description="Region Details"
+description = "RegionsMD Data"
 )
 AS
-
-{% if sql_flavour == 's4' -%}
-{% include './s4/RegionsMD.sql' %}
-{% else -%}
-{% include './ecc/RegionsMD.sql' %}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/RegionsMD.sql' -%}
 {% endif -%}
 
-;
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
 
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/RegionsMD.sql' -%}
+{% endif -%}

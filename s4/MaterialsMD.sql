@@ -167,9 +167,9 @@ SELECT
   MAKT.SPRAS AS Language_Spras,
   MAKT.MAKTX AS Materialtext_Maktx
 FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.mara` AS mara
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.mara` AS MARA
 INNER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.makt` AS makt
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.makt` AS MAKT
   ON
-    Mara.Mandt = Makt.Mandt
-    AND Mara.Matnr = Makt.Matnr
+    MARA.MANDT = MAKT.MANDT
+    AND MARA.MATNR = MAKT.MATNR

@@ -15,13 +15,15 @@
 
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountingDocumentsReceivables`
 OPTIONS(
-description="AR Accounting Documents Reporting"
+description = " AR Accounting Documents Reporting "
 )
 AS
+{% if sql_flavour == 'ecc' -%}
+{% include './ecc/AccountingDocumentsReceivables.sql' -%}
+{% endif -%}
+
+
 {% if sql_flavour == 's4' -%}
-{% include './s4/AccountingDocumentsReceivables.sql' %}
-{% else -%}
-{% include './ecc/AccountingDocumentsReceivables.sql' %}
+{% include './s4/AccountingDocumentsReceivables.sql' -%}
 {% endif -%}
 ;
-

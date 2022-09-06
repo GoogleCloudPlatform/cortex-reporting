@@ -229,9 +229,9 @@ SELECT
   ADRC.MC_TOWNSHIP AS TownshipNameInUpperCaseForSearchHelp_MC_TOWNSHIP,
   ADRC.XPCPT AS BusinessPurposeCompletedFlag_XPCPT
 FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.kna1` AS KNA1
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.kna1` AS KNA1
 LEFT OUTER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.adrc` AS ADRC 
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.adrc` AS ADRC
 ON
   KNA1.ADRNR = ADRC.ADDRNUMBER
   AND KNA1.MANDT = ADRC.CLIENT

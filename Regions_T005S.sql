@@ -11,15 +11,21 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
+
+
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Regions_T005S`
 OPTIONS(
-  description = "Regions (T005)"
+description = "Regions (T005S)"
 )
 AS
-SELECT
-  T005S.MANDT AS Client_MANDT,
-  T005S.LAND1 AS CountryKey_LAND1,
-  T005S.BLAND AS Region_BLAND,
-  T005S.FPRCD AS ProvincialTaxCode_FPRCD,
-  T005S.HERBL AS StateOfManufacture_HERBL
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.t005s` AS T005S
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/Regions_T005S.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/Regions_T005S.sql' -%}
+{% endif -%}

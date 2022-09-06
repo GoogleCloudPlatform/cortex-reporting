@@ -18,9 +18,15 @@ OPTIONS(
 description = "Company Master Data"
 )
 AS
-{% if sql_flavour == 's4' -%}
-{% include './s4/CompaniesMD.sql' %}
-{% else -%}
-{% include './ecc/CompaniesMD.sql' %}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/CompaniesMD.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/CompaniesMD.sql' -%}
 {% endif -%}
 ;

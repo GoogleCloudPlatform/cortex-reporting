@@ -11,21 +11,40 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-CREATE TABLE IF NOT EXISTS `{{ project_id_src  }}.{{ dataset_cdc_processed }}.trends` (
-    WeekStart DATE,	
-    InterestOverTime	INT64,		
-    CountryCode	STRING,		
-    HierarchyId	STRING,		
-    HierarchyText	STRING		
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+CREATE TABLE IF NOT EXISTS `{{ project_id_src  }}.{{ dataset_cdc_processed_ecc }}.trends` (
+    WeekStart DATE,
+    InterestOverTime	INT64,
+    CountryCode	STRING,
+    HierarchyId	STRING,
+    HierarchyText	STRING
 );
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+CREATE TABLE IF NOT EXISTS `{{ project_id_src  }}.{{ dataset_cdc_processed_s4 }}.trends` (
+    WeekStart DATE,
+    InterestOverTime	INT64,
+    CountryCode	STRING,
+    HierarchyId	STRING,
+    HierarchyText	STRING
+);
+{% endif -%}
 
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Trends`
+OPTIONS(
+description = "Google Search Trends view"
+)
 AS
-SELECT
-  WeekStart AS WeekStart,
-  CountryCode AS CountryCode,
-  HierarchyId AS HierarchyId,
-  HierarchyText AS HierarchyText,
-  InterestOverTime AS InterestOverTime
-FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.trends`
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+({% include './ecc/Trends.sql' -%})
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+({% include './s4/Trends.sql' -%})
+{% endif -%}
+;

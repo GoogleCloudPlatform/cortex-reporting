@@ -11,8 +11,8 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-
-CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed }}.weather_daily`
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.weather_daily`
 (
   country STRING,
   postcode STRING,
@@ -23,6 +23,22 @@ CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed }}.wea
   insert_timestamp TIMESTAMP,
   update_timestamp TIMESTAMP
 );
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.weather_daily`
+(
+  country STRING,
+  postcode STRING,
+  date DATE,
+  min_temp FLOAT64,
+  max_temp FLOAT64,
+  value_type STRING,
+  insert_timestamp TIMESTAMP,
+  update_timestamp TIMESTAMP
+);
+
+{% endif -%}
 
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.WeatherDaily`
 OPTIONS(

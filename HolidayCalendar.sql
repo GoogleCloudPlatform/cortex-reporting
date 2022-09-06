@@ -11,25 +11,45 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-CREATE TABLE IF NOT EXISTS {{ project_id_src  }}.{{ dataset_cdc_processed }}.holiday_calendar (
-    HolidayDate	STRING,		
-    Description	STRING,		
-    CountryCode	STRING,		
-    Year	STRING,		
-    WeekDay	STRING,		
-    QuarterOfYear	INTEGER,		
-    Week	INTEGER		
+
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+CREATE TABLE IF NOT EXISTS {{ project_id_src  }}.{{ dataset_cdc_processed_ecc }}.holiday_calendar (
+    HolidayDate	STRING,
+    Description	STRING,
+    CountryCode	STRING,
+    Year	STRING,
+    WeekDay	STRING,
+    QuarterOfYear	INTEGER,
+    Week	INTEGER
 );
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+CREATE TABLE IF NOT EXISTS {{ project_id_src  }}.{{ dataset_cdc_processed_s4 }}.holiday_calendar (
+    HolidayDate	STRING,
+    Description	STRING,
+    CountryCode	STRING,
+    Year	STRING,
+    WeekDay	STRING,
+    QuarterOfYear	INTEGER,
+    Week	INTEGER
+);
+{% endif -%}
 
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.HolidayCalendar`
+OPTIONS(
+description = "Holiday Calendar view"
+)
 AS
-SELECT
-  Description AS Description,
-  CountryCode AS CountryCode,
-  WeekDay AS WeekDay,
-  QuarterOfYear AS QuarterOfYear,
-  Week AS Week,
-  CAST(HolidayDate AS DATE) AS HolidayDate,
-  CAST(YEAR AS INTEGER) AS YearValue
-FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.holiday_calendar`
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+({% include './ecc/HolidayCalendar.sql' -%})
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+({% include './s4/HolidayCalendar.sql' -%})
+{% endif -%}
+;

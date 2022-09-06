@@ -4,8 +4,8 @@ WITH AGG_PRCD_ELEMENTS AS (
     Prcd_Elements.kposn AS Kposn,
     SUM(IF(Prcd_Elements.koaid = 'C' AND Prcd_Elements.kinak IS NULL, Prcd_Elements.kwert, NULL )) AS Rebate
   FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed }}.prcd_elements` AS Prcd_Elements
-  GROUP BY 1, 2
+    `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.prcd_elements` AS Prcd_Elements
+  GROUP BY Knumv, Kposn
 )
 SELECT
   vbrk.MANDT AS Client_MANDT,
@@ -59,6 +59,7 @@ SELECT
   vbrk.FKART_AB AS AccrualBillingType_FKART,
   vbrk.BELNR AS AccountingDocumentNumber_BELNR,
   vbrk.VSBED AS ShippingConditions_VSBED,
+  vbrk.WAERK AS SdDocumentCurrency_WAERK,
   vbrp.GSBER AS BusinessArea_GSBER,
   vbrp.VBELN AS BillingDocument_VBELN,
   vbrp.POSNR AS BillingItem_POSNR,
@@ -112,8 +113,8 @@ SELECT
   COUNT(vbrk.vbeln) OVER(PARTITION BY EXTRACT(YEAR FROM vbrk.fkdat), EXTRACT(MONTH FROM vbrk.fkdat)) AS MonthOrderCount,
   COUNT(vbrk.vbeln) OVER(PARTITION BY EXTRACT(YEAR FROM vbrk.fkdat), EXTRACT(MONTH FROM vbrk.fkdat), EXTRACT(WEEK FROM vbrk.fkdat)) AS WeekOrderCount
 
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbrk` AS vbrk
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbrp` AS vbrp
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbrk` AS vbrk
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbrp` AS vbrp
   ON
     vbrk.VBELN = vbrp.VBELN AND vbrk.mandt = vbrp.mandt
 INNER JOIN AGG_PRCD_ELEMENTS

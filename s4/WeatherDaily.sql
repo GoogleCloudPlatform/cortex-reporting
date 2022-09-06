@@ -21,4 +21,4 @@
   insert_timestamp AS InsertTimestamp,
   update_timestamp AS UpdateTimestamp
 FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.weather_daily`)
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.weather_daily`)

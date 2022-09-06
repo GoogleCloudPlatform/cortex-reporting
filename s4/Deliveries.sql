@@ -11,7 +11,7 @@ WITH TCURX AS (
   SELECT DISTINCT
     CURRKEY,
     CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.tcurx`
+  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tcurx`
 )
 
 SELECT
@@ -30,6 +30,7 @@ SELECT
   LIKP.LDDAT AS LoadingDate_LDDAT,
   LIKP.TDDAT AS TransportationPlanningDate_TDDAT,
   LIKP.LFDAT AS DeliveryDate_LFDAT,
+  LIKP.LFUHR AS DeliveryTime_LFUHR,
   LIKP.KODAT AS PickingDate_KODAT,
   LIKP.ABLAD AS UnloadingPoint_ABLAD,
   LIKP.INCO1 AS Incoterms__part1___INCO1,
@@ -169,6 +170,7 @@ SELECT
   LIKP.SPE_LIFEX_TYPE AS TypeOfExternalIdentification_SPE_LIFEX_TYPE,
   LIKP.SPE_TTYPE AS MeansOfTransport_SPE_TTYPE,
   LIKP.SPE_PRO_NUMBER AS PartnerIdentification_ProgressiveIdentificationNumber_SPE_PRO_NUMBER,
+  LIKP.LOC_GUID AS Akkreditiv_guid_LOC_GUID,
   LIKP.SPE_BILLING_IND AS EwmBillingIndicator_SPE_BILLING_IND,
   LIKP.PRINTER_PROFILE AS DescriptionOfPrintProfile_PRINTER_PROFILE,
   LIKP.MSR_ACTIVE AS AdvancedReturnsManagementActive_MSR_ACTIVE,
@@ -431,6 +433,7 @@ SELECT
   LIPS.SPE_GEN_ELIKZ AS deliveryCompleted_SPE_GEN_ELIKZ,
   LIPS.SPE_SCRAP_IND AS ScrapIndicatorForEwmProcessing_SPE_SCRAP_IND,
   LIPS.SPE_AUTH_NUMBER AS ReturnMaterialAuthorizationNumber_SPE_AUTH_NUMBER,
+  LIPS.SPE_INSPOUT_GUID AS Inspections_InspectionOutcomeGuidSetByEwm_SPE_INSPOUT_GUID,
   LIPS.SPE_FOLLOW_UP AS DefaultFollow_SPE_FOLLOW_UP,
   LIPS.SPE_EXP_DATE_EXT AS EndDateOfValidityPeriodOfReturnsDelivery_SPE_EXP_DATE_EXT,
   LIPS.SPE_EXP_DATE_INT AS EndDateOfInternalValidityPeriodOfReturnsDelivery_SPE_EXP_DATE_INT,
@@ -486,7 +489,6 @@ SELECT
     COALESCE(LIKP.NETWR * TCURX_WAERK.CURRFIX * -1, LIKP.NETWR * -1),
     COALESCE(LIKP.NETWR * TCURX_WAERK.CURRFIX, LIKP.NETWR)
   ) AS NetValueOfTheSalesOrderInDocumentCurrency_NETWR,
-  CAST(LIKP.LOC_GUID AS STRING) AS Akkreditiv_guid_LOC_GUID,
   EXTRACT(YEAR FROM LIKP.LFDAT) AS YearOfDeliveryDate_LFDAT,
   EXTRACT(MONTH FROM LIKP.LFDAT) AS MonthOfDeliveryDate_LFDAT,
   EXTRACT(WEEK FROM LIKP.LFDAT) AS WeekOfDeliveryDate_LFDAT,
@@ -495,12 +497,11 @@ SELECT
   IF(LIPS.SHKZG IN ('B', 'S', 'X'), (LIPS.BRGEW * -1), LIPS.BRGEW) AS GrossWeight_BRGEW, IF(LIPS.SHKZG IN ('B', 'S', 'X'), (LIPS.VOLUM * -1), LIPS.VOLUM) AS Volume_VOLUM,
   COALESCE(LIPS.WAVWR * TCURX_WAERK.CURRFIX, LIPS.WAVWR) AS CostInDocumentCurrency_WAVWR,
   COALESCE(LIPS.NETWR * TCURX_WAERK.CURRFIX, LIPS.NETWR) AS NetValueInDocumentCurrency_NETWR,
-  CAST(LIPS.SPE_INSPOUT_GUID AS STRING) AS Inspections_InspectionOutcomeGuidSetByEwm_SPE_INSPOUT_GUID,
   DATE_DIFF(LIKP.WADAT, LIKP.WADAT_IST, DAY) AS Delivery_Delay,
   (LIPS.LFIMG * LIPS.NETPR) AS DeliveredNetValue,
   IF(LIKP.VBTYP IN ('H', 'K', 'N', 'O', 'T', '6') OR LIPS.SHKZG IN ('B', 'S', 'X'), 'X', '') AS IS_RETURN
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.lips` AS LIPS
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.likp` AS LIKP
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.lips` AS LIPS
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.likp` AS LIKP
   ON
     LIKP.VBELN = LIPS.VBELN
     AND LIKP.MANDT = LIPS.MANDT

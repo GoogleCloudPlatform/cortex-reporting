@@ -12,7 +12,7 @@ WITH TCURX AS (
     CURRKEY,
     CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
   FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed }}.tcurx`
+    `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.tcurx`
 )
 
 SELECT
@@ -31,6 +31,7 @@ SELECT
   likp.LDDAT AS LoadingDate_LDDAT,
   likp.TDDAT AS TransportationPlanningDate_TDDAT,
   likp.LFDAT AS DeliveryDate_LFDAT,
+  likp.LFUHR AS DeliveryTime_LFUHR,
   likp.KODAT AS PickingDate_KODAT,
   likp.ABLAD AS UnloadingPoint_ABLAD,
   likp.INCO1 AS Incoterms__part1___INCO1,
@@ -501,8 +502,8 @@ SELECT
   DATE_DIFF(likp.WADAT, likp.WADAT_IST, DAY) AS Delivery_Delay,
   (lips.LFIMG * lips.NETPR) AS DeliveredNetValue,
   IF(likp.VBTYP IN ('H', 'K', 'N', 'O', 'T', '6') OR lips.SHKZG IN ('B', 'S', 'X'), 'X', '') AS IS_RETURN
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.lips` AS lips
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.likp` AS likp
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.lips` AS lips
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.likp` AS likp
   ON
     likp.VBELN = lips.VBELN
     AND likp.MANDT = lips.MANDT

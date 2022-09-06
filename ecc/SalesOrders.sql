@@ -1,18 +1,18 @@
 WITH TCURX AS (
-  -- Joining to this table is necesssary to fix the decimal place of 
-  -- amounts for non-decimal-bASed currencies. SAP stores these amounts 
-  -- offset by a factor  of 1/100 within the system (FYI this gets 
-  -- corrected when a user observes these in the GUI) Currencies w/ 
+  -- Joining to this table is necesssary to fix the decimal place of
+  -- amounts for non-decimal-bASed currencies. SAP stores these amounts
+  -- offset by a factor  of 1/100 within the system (FYI this gets
+  -- corrected when a user observes these in the GUI) Currencies w/
   -- decimals are unimpacted.
   --
-  -- Example of impacted currencies JPY, IDR, KRW, TWD 
+  -- Example of impacted currencies JPY, IDR, KRW, TWD
   -- Example of non-impacted currencies USD, GBP, EUR
   -- Example 1,000 JPY will appear AS 10.00 JPY
   SELECT DISTINCT
     CURRKEY,
     CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
   FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed }}.tcurx`
+    `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.tcurx`
 ),
 
 AGGKONV AS (
@@ -31,8 +31,8 @@ AGGKONV AS (
       IF(KONV.KFKIV = 'X' AND KONV.KOAID = 'B' AND KONV.KINAK IS NULL, KONV.KWERT, NULL)
     ) AS InterCompanyPrice
   FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed }}.konv` AS KONV
-  GROUP BY 1, 2, 3
+    `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.konv` AS KONV
+  GROUP BY KNUMV, KPOSN, MANDT
 ),
 
 AGGVBEP AS (
@@ -41,7 +41,7 @@ AGGVBEP AS (
     VBELN,
     POSNR,
     SUM(BMENG) AS ConfirmedOrderQuantity_BMENG
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbep`
+  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbep`
   GROUP BY MANDT, VBELN, POSNR
 ),
 
@@ -58,12 +58,12 @@ AGGVBPAITEM AS (
     MAX( IF((VBPA.PARVW = 'RE'), KNA1.Name1, NULL)) AS BillToPartyItemName_KUNNR,
     MAX( IF((VBPA.PARVW = 'RG'), VBPA.KUNNR, NULL)) AS PayerItem_KUNNR,
     MAX( IF((VBPA.PARVW = 'RG'), KNA1.Name1, NULL)) AS PayerItemName_KUNNR
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbpa` AS VBPA
-  INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.kna1` AS KNA1
+  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbpa` AS VBPA
+  INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.kna1` AS KNA1
     ON
       VBPA.Mandt = KNA1.Mandt
       AND VBPA.Kunnr = KNA1.Kunnr
-  GROUP BY 1, 2, 3
+  GROUP BY VBPA.Mandt, VBPA.Vbeln, VBPA.Posnr
 ),
 
 AGGVBPAHEADER AS (
@@ -79,17 +79,17 @@ AGGVBPAHEADER AS (
     MAX( IF((VBPA.PARVW = 'RE'), KNA1.Name1, NULL)) AS BillToPartyHeaderName_KUNNR,
     MAX( IF((VBPA.PARVW = 'RG'), VBPA.KUNNR, NULL)) AS PayerHeader_KUNNR,
     MAX( IF((VBPA.PARVW = 'RG'), KNA1.Name1, NULL)) AS PayerHeaderName_KUNNR
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbpa` AS VBPA
-  INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.kna1` AS KNA1
+  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbpa` AS VBPA
+  INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.kna1` AS KNA1
     ON
       VBPA.Mandt = KNA1.Mandt
       AND VBPA.Kunnr = KNA1.Kunnr
-  -- join `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbap` VBAP
+  -- join `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbap` VBAP
   -- ON
   -- VBAP.mandt=VBPA.mandt
   -- AND VBAP.vbeln=VBPA.vbeln
   -- AND VBPA.posnr is NULL or VBPA.posnr='000000'
-  GROUP BY 1, 2, 3
+  GROUP BY VBPA.Mandt, VBPA.Vbeln, VBPA.Posnr
 )
 
 SELECT
@@ -427,7 +427,7 @@ SELECT
   AGGKONV.InterCompanyPrice,
   AGGKONV.Discount,
   AGGVBEP.ConfirmedOrderQuantity_BMENG,
-  -- Sales Order Value at item level 
+  -- Sales Order Value at item level
   COALESCE(
     VBAK.NETWR * TCURX_VBAK.CURRFIX, VBAK.NETWR
   ) AS NetValueOfTheSalesOrderInDocumentCurrency_NETWR,
@@ -439,8 +439,8 @@ SELECT
   EXTRACT(DAY FROM VBAK.ERDAT) AS DayOfSalesOrderCreationDate_ERDAT,
   (VBAP.NETPR * VBAP.KWMENG) AS SalesOrderValueLineItem
 
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbak` AS VBAK
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbap` AS VBAP
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbak` AS VBAK
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbap` AS VBAP
   ON VBAK.VBELN = VBAP.VBELN
     AND VBAK.MANDT = VBAP.MANDT
 LEFT OUTER JOIN AGGVBEP
@@ -448,7 +448,7 @@ LEFT OUTER JOIN AGGVBEP
     AND VBAP.VBELN = AGGVBEP.VBELN
     AND VBAP.POSNR = AGGVBEP.POSNR
 
-LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbuk` AS VBUK
+LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbuk` AS VBUK
   ON VBAK.MANDT = VBUK.MANDT AND VBAK.VBELN = VBUK.VBELN
 LEFT JOIN AGGVBPAITEM
   ON VBAP.MANDT = AGGVBPAITEM.MANDT

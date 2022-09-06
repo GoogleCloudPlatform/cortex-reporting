@@ -1,13 +1,9 @@
 SELECT
-  T005T.MANDT AS Client_MANDT,
-  T005T.LAND1 AS CountryKey_LAND1,
-  T005T.SPRAS AS Language_SPRAS,
-  T005T.LANDX AS CountryName_LANDX
+  T005S.MANDT AS Client_MANDT,
+  T005S.LAND1 AS CountryKey_LAND1,
+  T005S.BLAND AS Region_BLAND,
+  T005S.FPRCD AS ProvincialTaxCode_FPRCD,
+  T005S.HERBL AS StateOfManufacture_HERBL
 FROM
-  -- `kittycorn-dev-infy.SAP_CDC_PROCESSED_ECC.t005` AS T005
-  --JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.t005t` AS T005T
-WHERE T005T.SPRAS = 'E'
---on
---  T005.MANDT=T005T.MANDT
- -- AND T005.LAND1 =T005T.LAND1
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.t005s` AS T005S
+

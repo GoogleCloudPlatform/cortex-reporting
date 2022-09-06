@@ -11,23 +11,21 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
+
+
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.ProductHierarchy_Flatten`
 OPTIONS(
   description = "Product Hierarchy Flattener"
 )
 AS
-WITH h1_h2 AS (
-  SELECT h1.prodh AS prodh1, h2.prodh AS prodh2
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.t179` AS h1
-  LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.t179` AS h2
-    ON starts_with(h2.prodh, h1.prodh)
-  WHERE h1.stufe = '1'
-    AND h2.stufe = '2'
-)
-SELECT h1_h2.prodh1 AS prodh1,
-  h1_h2.prodh2 AS prodh2,
-  h3.prodh AS prodh3
-FROM h1_h2 AS h1_h2
-LEFT OUTER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.t179` AS h3
-  ON starts_with(h3.prodh, h1_h2.prodh2)
-WHERE h3.stufe = '3'
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/ProductHierarchy_Flatten.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/ProductHierarchy_Flatten.sql' -%}
+{% endif -%}

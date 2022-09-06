@@ -15,13 +15,17 @@
 
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Billing`
 OPTIONS(
-description = "Billing Header and Items"
+description = "Billing Master Data"
 )
 AS
-
-{% if sql_flavour == 's4' -%}
-{% include './s4/Billing.sql' %}
-{% else -%}
-{% include './ecc/Billing.sql' %}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+({% include './ecc/Billing.sql' -%})
 {% endif -%}
-;
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+({% include './s4/Billing.sql' -%})
+{% endif -%}

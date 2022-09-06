@@ -1,8 +1,3 @@
-#-- Copyright 2022 Google LLC
-#--
-#-- Licensed under the Apache License, Version 2.0 (the "License");
-#-- you may not use this file except in compliance with the License.
-#-- You may obtain a copy of the License at
 #--
 #--     https://www.apache.org/licenses/LICENSE-2.0
 #--
@@ -17,10 +12,15 @@ OPTIONS(
 description = "Distribution Channel Details"
 )
 AS
-{% if sql_flavour == 's4' -%}
-{% include './s4/DistributionChannelsMD.sql' %}
-{% else -%}
-{% include './ecc/DistributionChannelsMD.sql' %}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/DistributionChannelsMD.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/DistributionChannelsMD.sql' -%}
 {% endif -%}
 ;
-

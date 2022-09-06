@@ -15,13 +15,17 @@
 
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Deliveries`
 OPTIONS(
-description = "Deliveries Header and Items"
+description = "Deliveries Master Data"
 )
 AS
-{% if sql_flavour == 's4' -%}
-{% include './s4/Deliveries.sql' %}
-{% else -%}
-{% include './ecc/Deliveries.sql' %}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+({% include './ecc/Deliveries.sql' -%})
 {% endif -%}
-;
 
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+({% include './s4/Deliveries.sql' -%})
+{% endif -%}

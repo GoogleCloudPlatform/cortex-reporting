@@ -11,14 +11,14 @@ SELECT
   TVKOT.VTEXT AS SalesOrgName_VTEXT,
   TVKOT.SPRAS AS Language_SPRAS
 FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.tvko` AS TVKO
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tvko` AS TVKO
 LEFT OUTER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.t001` AS T001
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.t001` AS T001
   ON
     TVKO.MANDT = T001.MANDT
     AND TVKO.BUKRS = T001.BUKRS
 INNER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.tvkot` AS TVKOT
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tvkot` AS TVKOT
   ON
     TVKO.MANDT = TVKOT.MANDT
     AND TVKO.VKORG = TVKOT.VKORG

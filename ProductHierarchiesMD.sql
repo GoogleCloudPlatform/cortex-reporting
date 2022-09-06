@@ -11,16 +11,21 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
+
+
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.ProductHierarchiesMD`
 OPTIONS(
   description = "Product Hierarchies Master Data"
 )
 AS
-SELECT t179.mandt AS Client_MANDT,
-  t179.prodh AS Hierarchy_PRODH,
-  t179.stufe AS Level_STUFE,
-  t179t.spras AS Language_SPRAS,
-  t179t.vtext AS Description_VTEXT
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.t179` AS t179
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.t179t` AS t179t
-  ON t179.mandt = t179t.mandt AND t179.prodh = t179t.prodh
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/ProductHierarchiesMD.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/ProductHierarchiesMD.sql' -%}
+{% endif -%}

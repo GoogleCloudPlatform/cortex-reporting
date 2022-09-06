@@ -1,3 +1,4 @@
+
 #-- Copyright 2022 Google LLC
 #--
 #-- Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +19,15 @@ OPTIONS(
 description="Materials Master Data"
 )
 AS
-{% if switch == 's4' -%}
-{% include './s4/MaterialsMD.sql' %}
-{% else -%}
-{% include './ecc/MaterialsMD.sql' %}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/MaterialsMD.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/MaterialsMD.sql' -%}
 {% endif -%}
 ;
-

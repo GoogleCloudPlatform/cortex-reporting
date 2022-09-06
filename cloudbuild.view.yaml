@@ -17,7 +17,7 @@ steps:
     args:
       - "-c"
       - |-
-        ./pipeline/view.sh \
+        ./view.sh \
           --source-project '${_PJID_SRC}' \
           --target-project '${_PJID_TGT}' \
           --raw-landing-dataset '${_DS_RAW}' \
@@ -28,14 +28,15 @@ steps:
           --mandt '${_MANDT}' \
           --sql-flavour '${_SQL_FLAVOUR}' \
             '${_SQL_FILE}'
+
 timeout: 1200s
 substitutions:
-  _SQL_FILE: none
-  _LOCATION: "US"
-  _DS_MODELS: "ML_MODELS"
-  _SQL_FLAVOUR: "ECC"
-  _MANDT: "050"
+  _SQL_FILE: ""
+  _LOCATION: ""
+  _DS_REPORTING: ""
+  _DS_MODELS: ""
+  _SQL_FLAVOUR: ""
   #_SQL_FLAVOUR: "S4"
-  #_MANDT: "100"
+  _MANDT: ""
 options:
   substitution_option: "ALLOW_LOOSE"

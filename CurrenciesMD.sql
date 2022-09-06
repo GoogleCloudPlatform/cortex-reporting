@@ -11,18 +11,21 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
+
+
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CurrenciesMD`
 OPTIONS(
   description = "Currencies Master Data"
 )
 AS
-SELECT
-  tcurc.mandt AS Client_MANDT, tcurc.waers AS CurrencyCode_WAERS, tcurc.isocd AS CurrencyISO_ISOCD,
-  tcurx.currdec AS CurrencyDecimals_CURRDEC, tcurt.spras AS Language,
-  tcurt.ktext AS CurrShortText_KTEXT, tcurt.ltext AS CurrLongText_LTEXT
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.tcurc` AS tcurc
-INNER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.tcurx` AS tcurx ON tcurc.waers = tcurx.currkey
-INNER JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed }}.tcurt`AS tcurt
-  ON tcurc.waers = tcurt.waers AND tcurc.mandt = tcurt.mandt
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/CurrenciesMD.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/CurrenciesMD.sql' -%}
+{% endif -%}

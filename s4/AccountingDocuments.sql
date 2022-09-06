@@ -348,7 +348,7 @@ WITH BSEG AS (
       ELSE PENFC
     END AS PENFC
   FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed }}.bseg`
+    `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.bseg`
 ),
 
 tcurx AS (
@@ -365,7 +365,7 @@ tcurx AS (
     CURRKEY,
     CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
   FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed }}.tcurx`
+    `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tcurx`
 )
 
 SELECT
@@ -829,26 +829,26 @@ SELECT
   IF(BSEG.UMSKZ = 'D', BSEG.DMBTR, 0) AS WrittenOffAmount_DMBTR,
   IF(BSEG.UMSKZ = 'D', BSEG.DMBTR, 0) AS BadDebt_DMBTR,
   IF(BSEG.AUGDT IS NULL, COALESCE(BSEG.DMBTR * TCURXHWAER.CURRFIX, BSEG.DMBTR), 0) AS AmountInLocalCurrencyClearingDate_DMBTR,
-  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t) AS NetDueDateCalc,
-  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.DueDateForCashDiscount1`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t) AS sk1dtCalc,
-  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.DueDateForCashDiscount2`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t) AS sk2dtCalc,
-  IF(bseg.H_BUDAT < CURRENT_DATE() AND `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t) > CURRENT_DATE()
-    AND bseg.augdt IS NULL, bseg.dmbtr, 0) AS OpenAndNotDue,
-  IF(bseg.H_BUDAT < CURRENT_DATE() AND bseg.augdt > `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t)
-    AND bseg.augdt IS NOT NULL, bseg.dmbtr, 0) AS ClearedAfterDueDate,
-  IF(bseg.H_BUDAT < CURRENT_DATE() AND bseg.augdt <= `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t)
-    AND bseg.augdt IS NOT NULL, bseg.dmbtr, 0) AS ClearedOnOrBeforeDueDate,
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T) AS NetDueDateCalc,
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.DueDateForCashDiscount1`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T) AS sk1dtCalc,
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.DueDateForCashDiscount2`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T) AS sk2dtCalc,
+  IF(BSEG.H_BUDAT < CURRENT_DATE() AND `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T) > CURRENT_DATE()
+    AND BSEG.AUGDT IS NULL, BSEG.DMBTR, 0) AS OpenAndNotDue,
+  IF(BSEG.H_BUDAT < CURRENT_DATE() AND BSEG.AUGDT > `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T)
+    AND BSEG.AUGDT IS NOT NULL, BSEG.DMBTR, 0) AS ClearedAfterDueDate,
+  IF(BSEG.H_BUDAT < CURRENT_DATE() AND BSEG.AUGDT <= `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T)
+    AND BSEG.AUGDT IS NOT NULL, BSEG.DMBTR, 0) AS ClearedOnOrBeforeDueDate,
 
-  IF(bseg.H_BUDAT < CURRENT_DATE() AND `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t) < CURRENT_DATE()
-    AND bseg.augdt IS NULL, bseg.dmbtr, 0) AS OpenAndOverDue,
+  IF(BSEG.H_BUDAT < CURRENT_DATE() AND `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T) < CURRENT_DATE()
+    AND BSEG.AUGDT IS NULL, BSEG.DMBTR, 0) AS OpenAndOverDue,
 
-  IF(bseg.H_BUDAT < CURRENT_DATE() AND (DATE_DIFF(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t), CURRENT_DATE(), DAY) > 90 )
-    AND bseg.augdt IS NULL, bseg.dmbtr, 0) AS DoubtfulReceivables,
-  DATE_DIFF( `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(bseg.koart, bseg.zfbdt, BKPF.bldat, bseg.shkzg, bseg.rebzg, bseg.zbd3t, bseg.zbd2t, bseg.zbd1t), CURRENT_DATE(), DAY)
+  IF(BSEG.H_BUDAT < CURRENT_DATE() AND (DATE_DIFF(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T), CURRENT_DATE(), DAY) > 90 )
+    AND BSEG.AUGDT IS NULL, BSEG.DMBTR, 0) AS DoubtfulReceivables,
+  DATE_DIFF( `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T), CURRENT_DATE(), DAY)
   AS DaysInArrear,
   IF(bseg.koart = 'D' AND bseg.augdt IS NULL AND bseg.H_BUDAT < CURRENT_DATE(), bseg.dmbtr, 0) AS AccountsReceivable,
   IF(bseg.koart = 'D' AND bseg.H_BUDAT < CURRENT_DATE() AND bseg.xumsw = 'X', bseg.dmbtr, 0) AS Sales
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.bkpf` AS BKPF
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.bkpf` AS BKPF
 INNER JOIN BSEG AS BSEG
   ON BKPF.MANDT = BSEG.MANDT
     AND BKPF.BUKRS = BSEG.BUKRS

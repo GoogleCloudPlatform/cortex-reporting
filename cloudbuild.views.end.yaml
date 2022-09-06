@@ -1,0 +1,11 @@
+
+timeout: 15000s
+substitutions:
+  _SQL_FILE: ""
+  _LOCATION: ""
+  _DS_REPORTING: ""
+  _DS_MODELS: ""
+  _SQL_FLAVOUR: ""
+  _MANDT: ""
+options:
+  substitution_option: "ALLOW_LOOSE"

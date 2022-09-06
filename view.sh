@@ -6,7 +6,6 @@
 
 usage() {
   cat <<HELP_USAGE
-
 Will generate one view.
 
 $0 [OPTIONS] VIEW_FILE
@@ -18,7 +17,7 @@ Options
 -x | cdc-processed-dataset      : Source Dataset Name. Mandatory
 -y | raw-landing-dataset        : Raw Landing Dataset Name. (Default: cdc-processed-dataset)
 -r | target-reporting-dataset   : Target Dataset Name for Reporting (Default: REPORTING)
--s | target-models-dataset      : Target Dataset Name for ML (Default: ML_MODELS) 
+-s | target-models-dataset      : Target Dataset Name for ML (Default: ML_MODELS)
 -l | location                   : Dataset Location (Default: US)
 -m | mandt                      : SAP Mandante. Mandatory
 -f | sql-flavour                : SQL Flavor Selection, ECC or S4. (Default: ECC)
@@ -31,8 +30,6 @@ HELP_USAGE
 # Validate input
 #--------------------
 validate() {
-
-  [ -e data.json ] && rm data.json
 
   if ! type "jinja" >/dev/null 2>&1; then
     echo "ERROR: jinja-cli not available, please check if installed and try again"
@@ -89,6 +86,7 @@ validate() {
     echo 'ERROR: "VIEW FILE" is required. See help for details.'
     exit 1
   fi
+
 }
 
 #--------------------
@@ -155,40 +153,47 @@ done
 
 sql_file=${@:$OPTIND:1}
 
-#set +o errexit +o noclobber +o nounset +o pipefail
-
 #--------------------
 # Main logic
 #--------------------
 
-validate
-# helpful for debugging
-# echo "source-project: ${project_id_src}"
-# echo "target-project: ${project_id_tgt}"
-# echo "raw-landing-dataset: ${dataset_raw_landing}"
-# echo "cdc-processed-dataset: ${dataset_cdc_processed}"
-# echo "target-reporting-dataset: ${dataset_reporting_tgt}"
-# echo "target-models-dataset: ${dataset_models_tgt}"
-# echo "location: ${location}"
-# echo "mandt: ${mandt}"
-# echo "sql-flavour: ${sql_flavour}"
-# echo "sql-file: ${sql_file}"
 
-cat <<EOF >data.json
+## For backwards compatibility, if config.json is not present,
+## attempt to generate a config.json file from parameters to replace
+## jinja templates in each view.
+if [[ ! -f "view.json" ]]; then
+  echo 'view.json not found, attempting to generate one'
+  if [[ "${sql_flavour}" == 'union' ]]; then
+    echo 'ERROR: UNION option requires view.json. Execute deploy.sh to generate one.'
+    exit 1
+  fi
+
+  validate
+
+  cat <<EOF >view.json
 {
-  "project_id_src": "${project_id_src}",
-  "project_id_tgt": "${project_id_tgt}",
-  "dataset_raw_landing": "${dataset_raw_landing}",
-  "dataset_cdc_processed": "${dataset_cdc_processed}",
-  "dataset_reporting_tgt": "${dataset_reporting_tgt}",
-  "dataset_models_tgt": "${dataset_models_tgt}",
-  "mandt": "${mandt}",
-  "sql_flavour": "${sql_flavour}"
+    "project_id_src": "${project_id_src}",
+    "project_id_tgt": "${project_id_tgt}",
+    "dataset_raw_landing_ecc": "${dataset_raw_landing}",
+    "dataset_raw_landing_s4": "${dataset_raw_landing}",
+    "dataset_cdc_processed_ecc": "${dataset_cdc_processed}",
+    "dataset_cdc_processed_s4": "${dataset_cdc_processed}",
+    "dataset_reporting_tgt": "${dataset_reporting_tgt}",
+    "dataset_models_tgt": "${dataset_models_tgt}",
+    "mandt": "${mandt}",
+    "mandt_ecc": "${mandt}",
+    "mandt_s4": "${mandt}",
+    "sql_flavour": "${sql_flavour}"
 }
 EOF
 
+fi
+
+# Useful for debugging
+echo "== Using following parameters: =="
+cat view.json
+
 echo "---Creating View: --- "
-# very brittle needs a better way
-query=$(jinja -d data.json "${sql_file}")
+query=$(jinja -d view.json -f json "${sql_file}")
 echo "${query}"
 bq query --batch --location="${location}" --use_legacy_sql=false "${query}"

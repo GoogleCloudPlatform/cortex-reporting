@@ -11,6 +11,7 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
+#-- ## EXPERIMENTAL
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.FixedAssetsMD`
 OPTIONS(
   description = "Fixed Assets Master Data"
@@ -132,4 +133,3 @@ SELECT
   ANKT.TXA50 AS AssetDescription_TXA50
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.anla` AS anla INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.ankt` AS ankt
   ON anla.mandt = ankt.mandt AND anla.anlkl = ankt.anlkl
-  

@@ -18,10 +18,16 @@ OPTIONS(
 description = "Sales Organization"
 )
 AS
-{% if sql_flavour == 's4' -%}
-{% include './s4/SalesOrganizationsMD.sql' %}
-{% else -%}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/SalesOrganizationsMD.sql' %}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/SalesOrganizationsMD.sql' %}
 {% endif -%}
 ;
 

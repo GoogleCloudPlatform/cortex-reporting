@@ -1,5 +1,4 @@
 output
-*.json
 env
 tests/logs/
 *.bak

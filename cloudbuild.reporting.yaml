@@ -20,23 +20,21 @@ steps:
         ./deploy.sh \
           --source-project '${_PJID_SRC}' \
           --target-project '${_PJID_TGT}' \
+          --cdc-processed-dataset-ecc '${_DS_CDC_ECC}' \
           --cdc-processed-dataset '${_DS_CDC}' \
           --raw-landing-dataset '${_DS_RAW}' \
           --target-reporting-dataset '${_DS_REPORTING}' \
           --target-models-dataset '${_DS_MODELS}' \
           --location '${_LOCATION}' \
           --mandt '${_MANDT}' \
-          --sql-flavour '${_SQL_FLAVOUR}' \
-            '${_VIEWS_DIR}'
+          --sql-flavour '${_SQL_FLAVOUR}'
 logsBucket: "gs://$_GCS_BUCKET"
 timeout: 7200s
 substitutions:
-  _VIEWS_DIR: src/views
-  _MANDT: "800"
-  _TEST_DATA: "false"
-  _LOCATION: "US"
-  _DS_REPORTING: "SAP_REPORTING"
-  _DS_MODELS: "SAP_ML_MODELS"
-  _SQL_FLAVOUR: "ECC"
+  _MANDT: ""
+  _LOCATION: ""
+  _DS_REPORTING: ""
+  _DS_MODELS: ""
+  _SQL_FLAVOUR: ""
 options:
   substitution_option: "ALLOW_LOOSE"

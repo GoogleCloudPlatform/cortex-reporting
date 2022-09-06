@@ -319,18 +319,18 @@ SELECT
   (COALESCE(vbap.NETPR * tcurx_vbap.CURRFIX, vbap.NETPR) * vbap.KWMENG) AS SalesOrderValueLineItemSourceCurrency,
   (COALESCE(vbap.NETPR * tcurx_vbap.CURRFIX, vbap.NETPR) * currency_conversion.UKURS * vbap.KWMENG) AS SalesOrderValueLineItemTargetCurrency
 
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbak` AS vbak
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.vbap` AS vbap
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbak` AS vbak
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbap` AS vbap
   ON vbak.VBELN = vbap.VBELN
     AND vbak.MANDT = vbap.MANDT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.currency_decimal` AS tcurx_vbak
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS tcurx_vbak
   ON vbak.WAERK = tcurx_vbak.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.currency_decimal` AS tcurx_vbap
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS tcurx_vbap
   ON vbap.WAERK = tcurx_vbap.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed }}.currency_conversion` AS currency_conversion
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
   ON vbak.MANDT = currency_conversion.MANDT
     AND vbak.WAERK = currency_conversion.FCURR
     AND vbak.ERDAT BETWEEN currency_conversion.start_date AND currency_conversion.end_date
-    AND currency_conversion.TCURR = 'USD'
+    AND currency_conversion.TCURR {{ currency }}
     --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
     AND currency_conversion.KURST = 'M'

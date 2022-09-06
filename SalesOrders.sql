@@ -17,10 +17,15 @@ OPTIONS(
 description = "Sales Orders Header and Items"
 )
 AS
-{% if sql_flavour == 's4' -%}
-{% include './s4/SalesOrders.sql' %}
-{% else -%}
-{% include './ecc/SalesOrders.sql' %}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+({% include './ecc/SalesOrders.sql' -%})
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+({% include './s4/SalesOrders.sql' -%})
 {% endif -%}
 ;
-

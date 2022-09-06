@@ -11,14 +11,20 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
+
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Languages_T002`
 OPTIONS(
-  description = "Languages table (T002)"
+description = "Languages (T002)"
 )
 AS
-SELECT
-  T002.SPRAS AS LanguageKey_SPRAS,
-  T002.LASPEZ AS LanguageSpecifications_LASPEZ,
-  T002.LAHQ AS DegreeOfTranslationOfLanguage_LAHQ,
-  T002.LAISO AS TwoCharacterSapLanguageCode_LAISO
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed }}.t002` AS T002
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/Languages_T002.sql' -%}
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/Languages_T002.sql' -%}
+{% endif -%}
