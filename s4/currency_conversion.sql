@@ -1,4 +1,3 @@
-((
     SELECT
       CASE
         WHEN ukurs < 0 THEN (1 / ABS(ukurs)) * ip_amount
@@ -28,4 +27,3 @@
       AND fcurr = ip_fcurr
       AND tcurr = ip_tcurr
       AND ip_date BETWEEN start_date AND end_date
-));

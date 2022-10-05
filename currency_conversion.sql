@@ -16,14 +16,34 @@
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 CREATE OR REPLACE FUNCTION `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Currency_Conversion_ecc`(
   ip_mandt STRING, ip_kurst STRING, ip_fcurr STRING, ip_tcurr STRING, ip_date DATE, ip_amount NUMERIC
-) AS 
+) AS ((
 {% include './ecc/currency_conversion.sql' -%}
+));
 {% endif -%}
 
 
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 CREATE OR REPLACE FUNCTION `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Currency_Conversion_s4`(
   ip_mandt STRING, ip_kurst STRING, ip_fcurr STRING, ip_tcurr STRING, ip_date DATE, ip_amount NUMERIC
-) AS 
+) AS ((
 {% include './s4/currency_conversion.sql' -%}
+));
 {% endif -%}
+
+
+CREATE OR REPLACE FUNCTION `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Currency_Conversion`(
+  ip_mandt STRING, ip_kurst STRING, ip_fcurr STRING, ip_tcurr STRING, ip_date DATE, ip_amount NUMERIC
+) AS
+((
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+({% include './ecc/currency_conversion.sql' -%})
+{% endif -%}
+
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
+
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+({% include './s4/currency_conversion.sql' -%})
+{% endif -%}
+))
