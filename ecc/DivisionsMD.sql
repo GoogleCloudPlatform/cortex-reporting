@@ -1,7 +1,6 @@
 SELECT
   TSPA.mandt AS Client_MANDT,
   TSPA.spart AS Division_SPART,
-  TSPA.hide AS CustomizatioOfSDInputHelpEntries_HIDE,
   TSPAT.spras AS LanguageKey_SPRAS,
   TSPAT.vtext AS DivisionName_VTEXT
 FROM

@@ -382,7 +382,7 @@ SELECT
   JEST.STAT AS ObjectStatus_STAT,
   JEST.INACT AS Indicator_StatusIsInactive_INACT,
   JEST.CHGNR AS ChangeNumber_CHGNR,
-  JEST.DATAAGING AS DataFilterValueForDataAging__DATAAGING,
+  JEST._DATAAGING AS DataFilterValueForDataAging__DATAAGING,
   --TJ02T.ISTAT AS SystemStatus_ISTAT,
   TJ02T.SPRAS AS LanguageKey_SPRAS,
   --TJ02T.TXT04 AS IndividualStatusOfAnObject__shortForm___TXT04,

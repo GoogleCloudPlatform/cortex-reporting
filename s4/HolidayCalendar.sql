@@ -19,5 +19,4 @@
   Week AS Week,
   CAST(HolidayDate AS DATE) AS HolidayDate,
   CAST(YEAR AS INTEGER) AS YearValue
-FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.holiday_calendar`)
+  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.holiday_calendar`)

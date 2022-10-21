@@ -34,7 +34,7 @@ SELECT
   AVG(max_temp) AS avg_max_temp,
   MIN(min_temp) AS min_temp,
   MAX(max_temp) AS max_temp
-FROM {{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.weather_daily
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.weather_daily`
 GROUP BY country, postcode, week_start_date;
 {% endif -%}
 
@@ -61,7 +61,7 @@ SELECT
   AVG(max_temp) AS avg_max_temp,
   MIN(min_temp) AS min_temp,
   MAX(max_temp) AS max_temp
-FROM {{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.weather_daily
+FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.weather_daily`
 GROUP BY country, postcode, week_start_date;
 {% endif -%}
 
