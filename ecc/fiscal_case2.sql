@@ -10,4 +10,4 @@
         FROM
         Ip_Date) AS STRING)
       AND Bumon = CAST(CAST( Ip_Date AS STRING FORMAT('MM')) AS STRING ))
-);
+)

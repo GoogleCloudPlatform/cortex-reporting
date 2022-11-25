@@ -11,7 +11,6 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-#-- ## EXPERIMENTAL
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.ProductionOrders`
 OPTIONS(
   description = "Production Order Headers and Items"

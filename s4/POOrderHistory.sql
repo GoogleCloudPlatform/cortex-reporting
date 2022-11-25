@@ -1,146 +1,130 @@
-(WITH
-tcurx AS (
-  -- Joining to this table is necesssary to fix the decimal place of
-  -- amounts for non-decimal-based currencies. SAP stores these amounts
-  -- offset by a factor  of 1/100 within the system (FYI this gets
-  -- corrected when a user observes these in the GUI) Currencies w/
-  -- decimals are unimpacted.
-  --
-  -- Example of impacted currencies JPY, IDR, KRW, TWD
-  -- Example of non-impacted currencies USD, GBP, EUR
-  -- Example 1,000 JPY will appear as 10.00 JPY
-  SELECT DISTINCT
-    CURRKEY,
-    CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tcurx`
-),
-
-
-conv AS (
-  -- This table is used to convert rates from the transaction currency to USD.
-  SELECT DISTINCT
-    mandt,
-    fcurr,
-    tcurr,
-    ukurs,
-    PARSE_DATE("%Y%m%d", CAST(99999999 - CAST(gdatu AS INT64) AS STRING)) AS gdatu
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tcurr`
-  WHERE
-    mandt = '{{ mandt_s4 }}'
-    AND kurst = 'M' -- Daily Corporate Rate
-    AND tcurr {{ currency }} -- Convert to target currency
-
-  UNION ALL
-## CORTEX-CUSTOMER: Replace with currency of choice, or add additional currencies
-## as a union clause
-  -- USD to USD rates do not exist in TCURR (or any other rates that are same-to-
-  -- same such as EUR to EUR / JPY to JPY etc.
-  SELECT
-    '{{ mandt_s4 }}' AS mandt,
-    'USD' AS fcurr,
-    'USD' AS tcurr,
-    1 AS ukurs,
-    date_array AS gdatu
-  FROM
-    UNNEST(GENERATE_DATE_ARRAY('1990-01-01', '2060-12-31')) AS date_array
-)
-
 SELECT
   PO.VendorAccountNumber_LIFNR,
-  EKBE.MANDT AS Client_MANDT,
-  EKBE.EBELN AS PurchasingDocumentNumber_EBELN,
-  EKBE.EBELP AS ItemNumberOfPurchasingDocument_EBELP,
-  EKBE.ZEKKN AS SequentialNumberOfAccountAssignment_ZEKKN,
-  EKBE.VGABE AS TransactioneventType_VGABE,
-  EKBE.GJAHR AS MaterialDocumentYear_GJAHR,
-  EKBE.BELNR AS NumberOfMaterialDocument_BELNR,
-  EKBE.BUZEI AS ItemInMaterialDocument_BUZEI,
-  EKBE.BEWTP AS PurchaseOrderHistoryCategory_BEWTP,
-  EKBE.BWART AS MovementType__inventoryManagement___BWART,
-  EKBE.BUDAT AS PostingDateInTheDocument_BUDAT,
-  EKBE.MENGE AS Quantity_MENGE,
-  EKBE.BPMNG AS QuantityInPurchaseOrderPriceUnit_BPMNG,
-  EKBE.DMBTR AS AmountInLocalCurrency_DMBTR,
-  EKBE.WRBTR AS AmountInDocumentCurrency_WRBTR,
-  EKBE.WAERS AS CurrencyKey_WAERS,
-  EKBE.AREWR AS GrirAccountClearingValueInLocalCurrency_AREWR,
-  EKBE.WESBS AS GoodsReceiptBlockedStockInOrderUnit_WESBS,
-  EKBE.BPWES AS QuantityInGrBlockedStockInOrderPriceUnit_BPWES,
-  EKBE.SHKZG AS DebitcreditIndicator_SHKZG,
-  EKBE.BWTAR AS ValuationType_BWTAR,
-  EKBE.ELIKZ AS deliveryCompleted_ELIKZ,
-  EKBE.XBLNR AS ReferenceDocumentNumber_XBLNR,
-  EKBE.LFGJA AS FiscalYearOfAReferenceDocument_LFGJA,
-  EKBE.LFBNR AS DocumentNoOfAReferenceDocument_LFBNR,
-  EKBE.LFPOS AS ItemOfAReferenceDocument_LFPOS,
-  EKBE.GRUND AS ReasonForMovement_GRUND,
-  EKBE.CPUDT AS DayOnWhichAccountingDocumentWasEntered_CPUDT,
-  EKBE.CPUTM AS TimeOfEntry_CPUTM,
-  EKBE.REEWR AS InvoiceValueEntered__inLocalCurrency___REEWR,
-  EKBE.EVERE AS ComplianceWithShippingInstructions_EVERE,
-  EKBE.REFWR AS InvoiceValueInForeignCurrency_REFWR,
-  EKBE.MATNR AS MaterialNumber_MATNR,
-  EKBE.WERKS AS Plant_WERKS,
-  EKBE.XWSBR AS ReversalOfGrAllowedForGrBasedIvDespiteInvoice_XWSBR,
-  EKBE.ETENS AS SequentialNumberOfVendorConfirmation_ETENS,
-  EKBE.KNUMV AS NumberOfTheDocumentCondition_KNUMV,
-  EKBE.MWSKZ AS TaxOnSalespurchasesCode_MWSKZ,
-  EKBE.LSMNG AS QuantityInUnitOfMeasureFromDeliveryNote_LSMNG,
-  EKBE.LSMEH AS UnitOfMeasureFromDeliveryNote_LSMEH,
-  EKBE.EMATN AS MaterialNumber_EMATN,
-  EKBE.AREWW AS ClearingValueOnGrirClearingAccount__transacCurrency___AREWW,
-  EKBE.HSWAE AS LocalCurrencyKey_HSWAE,
-  EKBE.BAMNG AS Quantity_BAMNG,
-  EKBE.CHARG AS BatchNumber_CHARG,
-  EKBE.BLDAT AS DocumentDateInDocument_BLDAT,
-  EKBE.XWOFF AS CalculationOfValOpen_XWOFF,
-  EKBE.XUNPL AS UnplannedAccountAssignmentFromInvoiceVerification_XUNPL,
-  EKBE.ERNAM AS NameOfPersonWhoCreatedTheObject_ERNAM,
-  EKBE.SRVPOS AS ServiceNumber_SRVPOS,
-  EKBE.PACKNO AS PackageNumberOfService_PACKNO,
-  EKBE.INTROW AS LineNumberOfService_INTROW,
-  EKBE.BEKKN AS NumberOfPoAccountAssignment_BEKKN,
-  EKBE.LEMIN AS ReturnsIndicator_LEMIN,
-  EKBE.AREWB AS ClearingValueOnGrirAccountInPoCurrency_AREWB,
-  EKBE.REWRB AS InvoiceAmountInPoCurrency_REWRB,
-  EKBE.SAPRL AS SapRelease_SAPRL,
-  EKBE.MENGE_POP AS Quantity_MENGE_POP,
-  EKBE.BPMNG_POP AS QuantityInPurchaseOrderPriceUnit_BPMNG_POP,
-  EKBE.DMBTR_POP AS AmountInLocalCurrency_DMBTR_POP,
-  EKBE.WRBTR_POP AS AmountInDocumentCurrency_WRBTR_POP,
-  EKBE.WESBB AS ValuatedGoodsReceiptBlockedStockInOrderUnit_WESBB,
-  EKBE.BPWEB AS QuantityInValuatedGrBlockedStockInOrderPriceUnit_BPWEB,
-  EKBE.WEORA AS AcceptanceAtOrigin_WEORA,
-  EKBE.AREWR_POP AS GrirAccountClearingValueInLocalCurrency_AREWR_POP,
-  EKBE.KUDIF AS ExchangeRateDifferenceAmount_KUDIF,
-  EKBE.RETAMT_FC AS RetentionAmountInDocumentCurrency_RETAMT_FC,
-  EKBE.RETAMT_LC AS RetentionAmountInCompanyCodeCurrency_RETAMT_LC,
-  EKBE.RETAMTP_FC AS PostedRetentionAmountInDocumentCurrency_RETAMTP_FC,
-  EKBE.RETAMTP_LC AS PostedSecurityRetentionAmountInCompanyCodeCurrency_RETAMTP_LC,
-  EKBE.XMACC AS MultipleAccountAssignment_XMACC,
-  EKBE.WKURS AS ExchangeRate_WKURS,
-  EKBE.INV_ITEM_ORIGIN AS OriginOfAnInvoiceItem_INV_ITEM_ORIGIN,
-  EKBE.VBELN_ST AS Delivery_VBELN_ST,
-  EKBE.VBELP_ST AS DeliveryItem_VBELP_ST,
-  EKBE.SGT_SCAT AS StockSegment_SGT_SCAT,
-  EKBE.ET_UPD AS ProcedureForUpdatingTheScheduleLineQuantity_ET_UPD,
-  EKBE.J_SC_DIE_COMP_F AS DepreciationCompletionFlag_J_SC_DIE_COMP_F,
-  -- EKBE.FSH_SEASON_YEAR AS SeasonYear_FSH_SEASON_YEAR,
-  -- EKBE.FSH_SEASON AS Season_FSH_SEASON,
-  -- EKBE.FSH_COLLECTION AS FashionCollection_FSH_COLLECTION,
-  -- EKBE.FSH_THEME AS FashionTheme_FSH_THEME,
-  EKBE.WRF_CHARSTC1 AS CharacteristicValue1_WRF_CHARSTC1,
-  EKBE.WRF_CHARSTC2 AS CharacteristicValue2_WRF_CHARSTC2,
-  EKBE.WRF_CHARSTC3 AS CharacteristicValue3_WRF_CHARSTC3
-FROM `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.PurchaseDocuments` AS PO
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.ekbe` AS EKBE
-  ON PO.DocumentNumber_EBELN = EKBE.EBELN
-    AND PO.Item_EBELP = EKBE.EBELP
-LEFT JOIN tcurx
-  ON PO.CurrencyKey_WAERS = tcurx.CURRKEY
-LEFT JOIN conv
-  ON PO.Client_MANDT = conv.MANDT
-    AND PO.CurrencyKey_WAERS = conv.FCURR
-    AND CAST(PO.ChangeDate_AEDAT AS DATE) = conv.GDATU
-WHERE EKBE.vgabe = '1' #Goods receipt
-)
+  ekbe.MANDT AS Client_MANDT,
+  ekbe.EBELN AS PurchasingDocumentNumber_EBELN,
+  ekbe.EBELP AS ItemNumberOfPurchasingDocument_EBELP,
+  ekbe.ZEKKN AS SequentialNumberOfAccountAssignment_ZEKKN,
+  ekbe.VGABE AS TransactioneventType_VGABE,
+  ekbe.GJAHR AS MaterialDocumentYear_GJAHR,
+  ekbe.BELNR AS NumberOfMaterialDocument_BELNR,
+  ekbe.BUZEI AS ItemInMaterialDocument_BUZEI,
+  ekbe.BEWTP AS PurchaseOrderHistoryCategory_BEWTP,
+  ekbe.BWART AS MovementType__inventoryManagement___BWART,
+  ekbe.BUDAT AS PostingDateInTheDocument_BUDAT,
+  ekbe.MENGE AS Quantity_MENGE,
+  ekbe.BPMNG AS QuantityInPurchaseOrderPriceUnit_BPMNG,
+  ekbe.WAERS AS CurrencyKey_WAERS,
+  ekbe.WESBS AS GoodsReceiptBlockedStockInOrderUnit_WESBS,
+  ekbe.BPWES AS QuantityInGrBlockedStockInOrderPriceUnit_BPWES,
+  ekbe.SHKZG AS DebitcreditIndicator_SHKZG,
+  ekbe.BWTAR AS ValuationType_BWTAR,
+  ekbe.ELIKZ AS deliveryCompleted_ELIKZ,
+  ekbe.XBLNR AS ReferenceDocumentNumber_XBLNR,
+  ekbe.LFGJA AS FiscalYearOfAReferenceDocument_LFGJA,
+  ekbe.LFBNR AS DocumentNoOfAReferenceDocument_LFBNR,
+  ekbe.LFPOS AS ItemOfAReferenceDocument_LFPOS,
+  ekbe.GRUND AS ReasonForMovement_GRUND,
+  ekbe.CPUDT AS DayOnWhichAccountingDocumentWasEntered_CPUDT,
+  ekbe.CPUTM AS TimeOfEntry_CPUTM,
+  ekbe.EVERE AS ComplianceWithShippingInstructions_EVERE,
+  ekbe.REFWR AS InvoiceValueInForeignCurrency_REFWR,
+  ekbe.MATNR AS MaterialNumber_MATNR,
+  ekbe.WERKS AS Plant_WERKS,
+  ekbe.XWSBR AS ReversalOfGrAllowedForGrBasedIvDespiteInvoice_XWSBR,
+  ekbe.ETENS AS SequentialNumberOfVendorConfirmation_ETENS,
+  ekbe.KNUMV AS NumberOfTheDocumentCondition_KNUMV,
+  ekbe.MWSKZ AS TaxOnSalespurchasesCode_MWSKZ,
+  ekbe.LSMNG AS QuantityInUnitOfMeasureFromDeliveryNote_LSMNG,
+  ekbe.LSMEH AS UnitOfMeasureFromDeliveryNote_LSMEH,
+  ekbe.EMATN AS MaterialNumber_EMATN,
+  ekbe.HSWAE AS LocalCurrencyKey_HSWAE,
+  ekbe.BAMNG AS Quantity_BAMNG,
+  ekbe.CHARG AS BatchNumber_CHARG,
+  ekbe.BLDAT AS DocumentDateInDocument_BLDAT,
+  ekbe.XWOFF AS CalculationOfValOpen_XWOFF,
+  ekbe.XUNPL AS UnplannedAccountAssignmentFromInvoiceVerification_XUNPL,
+  ekbe.ERNAM AS NameOfPersonWhoCreatedTheObject_ERNAM,
+  ekbe.SRVPOS AS ServiceNumber_SRVPOS,
+  ekbe.PACKNO AS PackageNumberOfService_PACKNO,
+  ekbe.INTROW AS LineNumberOfService_INTROW,
+  ekbe.BEKKN AS NumberOfPoAccountAssignment_BEKKN,
+  ekbe.LEMIN AS ReturnsIndicator_LEMIN,
+  ekbe.AREWB AS ClearingValueOnGrirAccountInPoCurrency_AREWB,
+  ekbe.REWRB AS InvoiceAmountInPoCurrency_REWRB,
+  ekbe.SAPRL AS SapRelease_SAPRL,
+  ekbe.MENGE_POP AS Quantity_MENGE_POP,
+  ekbe.BPMNG_POP AS QuantityInPurchaseOrderPriceUnit_BPMNG_POP,
+  ekbe.DMBTR_POP AS AmountInLocalCurrency_DMBTR_POP,
+  ekbe.WRBTR_POP AS AmountInDocumentCurrency_WRBTR_POP,
+  ekbe.WESBB AS ValuatedGoodsReceiptBlockedStockInOrderUnit_WESBB,
+  ekbe.BPWEB AS QuantityInValuatedGrBlockedStockInOrderPriceUnit_BPWEB,
+  ekbe.WEORA AS AcceptanceAtOrigin_WEORA,
+  ekbe.AREWR_POP AS GrirAccountClearingValueInLocalCurrency_AREWR_POP,
+  ekbe.KUDIF AS ExchangeRateDifferenceAmount_KUDIF,
+  ekbe.RETAMT_FC AS RetentionAmountInDocumentCurrency_RETAMT_FC,
+  ekbe.RETAMT_LC AS RetentionAmountInCompanyCodeCurrency_RETAMT_LC,
+  ekbe.RETAMTP_FC AS PostedRetentionAmountInDocumentCurrency_RETAMTP_FC,
+  ekbe.RETAMTP_LC AS PostedSecurityRetentionAmountInCompanyCodeCurrency_RETAMTP_LC,
+  ekbe.XMACC AS MultipleAccountAssignment_XMACC,
+  ekbe.WKURS AS ExchangeRate_WKURS,
+  ekbe.INV_ITEM_ORIGIN AS OriginOfAnInvoiceItem_INV_ITEM_ORIGIN,
+  ekbe.VBELN_ST AS Delivery_VBELN_ST,
+  ekbe.VBELP_ST AS DeliveryItem_VBELP_ST,
+  ekbe.SGT_SCAT AS StockSegment_SGT_SCAT,
+  ekbe.ET_UPD AS ProcedureForUpdatingTheScheduleLineQuantity_ET_UPD,
+  ekbe.J_SC_DIE_COMP_F AS DepreciationCompletionFlag_J_SC_DIE_COMP_F,
+  -- ekbe.FSH_SEASON_YEAR AS SeasonYear_FSH_SEASON_YEAR,
+  -- ekbe.FSH_SEASON AS Season_FSH_SEASON,
+  -- ekbe.FSH_COLLECTION AS FashionCollection_FSH_COLLECTION,
+  -- ekbe.FSH_THEME AS FashionTheme_FSH_THEME,
+  ekbe.WRF_CHARSTC1 AS CharacteristicValue1_WRF_CHARSTC1,
+  ekbe.WRF_CHARSTC2 AS CharacteristicValue2_WRF_CHARSTC2,
+  ekbe.WRF_CHARSTC3 AS CharacteristicValue3_WRF_CHARSTC3,
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_BUDAT.CalYear AS YearOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_BUDAT.CalMonth AS MonthOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_BUDAT.CalWeek AS WeekOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_BUDAT.CalQuarter AS QuarterOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_BLDAT.CalYear AS YearOfDocumentDateInDocument_BLDAT,
+  CalendarDateDimension_BLDAT.CalMonth AS MonthOfDocumentDateInDocument_BLDAT,
+  CalendarDateDimension_BLDAT.CalWeek AS WeekOfDocumentDateInDocument_BLDAT,
+  CalendarDateDimension_BLDAT.CalQuarter AS QuarterOfDocumentDateInDocument_BLDAT,
+  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
+  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
+  -- currency_conversion.conv_date AS Conversion_date,
+  -- ekbe.DMBTR * currency_conversion.UKURS AS AmountInTargetCurrency_DMBTR,
+  -- ekbe.WRBTR * currency_conversion.UKURS AS AmountInTargetCurrency_WRBTR,
+  -- ekbe.AREWR * currency_conversion.UKURS AS GrirAccountClearingValueInTargetCurrency_AREWR,
+  -- ekbe.REEWR * currency_conversion.UKURS AS InvoiceValueEntered__InTargetCurrency___REEWR,
+  -- ekbe.AREWW * currency_conversion.UKURS AS ClearingValueOnGrirClearingAccount__InTargetCurrency___AREWW,
+  COALESCE(ekbe.DMBTR * currency_decimal.CURRFIX, ekbe.DMBTR) AS AmountInLocalCurrency_DMBTR,
+  COALESCE(ekbe.WRBTR * currency_decimal.CURRFIX, ekbe.WRBTR) AS AmountInDocumentCurrency_WRBTR,
+  COALESCE(ekbe.AREWR * currency_decimal.CURRFIX, ekbe.AREWR) AS GrirAccountClearingValueInLocalCurrency_AREWR,
+  COALESCE(ekbe.REEWR * currency_decimal.CURRFIX, ekbe.REEWR) AS InvoiceValueEntered__inLocalCurrency___REEWR,
+  COALESCE(ekbe.AREWW * currency_decimal.CURRFIX, ekbe.AREWW) AS ClearingValueOnGrirClearingAccount__transacCurrency___AREWW
+
+FROM
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.PurchaseDocuments` AS PO
+INNER JOIN
+  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.ekbe` AS ekbe
+  ON PO.Client_MANDT = ekbe.MANDT
+    AND PO.DocumentNumber_EBELN = ekbe.EBELN
+    AND PO.Item_EBELP = ekbe.EBELP
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+  ON PO.CurrencyKey_WAERS = currency_decimal.CURRKEY
+--##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+-- LEFT JOIN
+--   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--   ON PO.Client_MANDT = currency_conversion.MANDT
+--     AND PO.CurrencyKey_WAERS = currency_conversion.FCURR
+--     AND PO.ChangeDate_AEDAT = currency_conversion.conv_date
+--     AND currency_conversion.TCURR {{ currency }}
+--##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+--     AND currency_conversion.KURST = 'M'
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
+  ON CalendarDateDimension_BUDAT.Date = ekbe.BUDAT
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
+  ON CalendarDateDimension_BLDAT.Date = ekbe.BLDAT
+--vgabe='1' for Goods Receipt and vgabe='2' for Invoice Receipt
+WHERE ekbe.VGABE IN('1', '2')

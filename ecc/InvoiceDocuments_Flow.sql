@@ -1,246 +1,229 @@
 WITH
-TCURX AS (
-  -- Joining to this table is necesssary to fix the decimal place of 
-  -- amounts for non-decimal-based currencies. SAP stores these amounts 
-  -- offset by a factor  of 1/100 within the system (FYI this gets 
-  -- corrected when a user observes these in the GUI) Currencies w/ 
-  -- decimals are unimpacted.
-  --
-  -- Example of impacted currencies JPY, IDR, KRW, TWD 
-  -- Example of non-impacted currencies USD, GBP, EUR
-  -- Example 1,000 JPY will appear as 10.00 JPY
-  SELECT DISTINCT
-    CURRKEY,
-    CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
-  FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.tcurx`
-),
+  -- Subquery to flip debit/credit in to positive/negative
+  RSEG AS (
+    SELECT
+      * EXCEPT (wrbtr, bnkan),
+      CASE
+        WHEN shkzg = 'S' THEN 'debit'
+        WHEN shkzg = 'H' THEN 'credit'
+      END AS dr_cr_flag,
+      CASE
+        WHEN shkzg = 'S' THEN wrbtr  -- S = Debit | Amount in document currency
+        WHEN shkzg = 'H' THEN wrbtr * -1  -- H = Credit | Amount in document currency
+        ELSE wrbtr
+      END AS wrbtr,
+      CASE
+        WHEN shkzg = 'S' THEN bnkan  -- S = Debit | Delivery Cost Share of Item Value
+        WHEN shkzg = 'H' THEN bnkan * -1  -- H = Credit | Delivery Cost Share of Item Value
+        ELSE bnkan
+      END AS bnkan
+    FROM
+      `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.rseg`
+  ),
 
--- Subquery to flip debit/credit in to positive/negative
-RSEG AS (
-  SELECT
-    * EXCEPT (wrbtr, bnkan),
-    CASE
-      WHEN shkzg = 'S' THEN 'debit'
-      WHEN shkzg = 'H' THEN 'credit'
-    END AS dr_cr_flag,
-    CASE
-      WHEN shkzg = 'S' THEN wrbtr  -- S = Debit | Amount in document currency
-      WHEN shkzg = 'H' THEN wrbtr * -1  -- H = Credit | Amount in document currency
-      ELSE wrbtr
-    END AS wrbtr,
-    CASE
-      WHEN shkzg = 'S' THEN bnkan  -- S = Debit | Delivery Cost Share of Item Value
-      WHEN shkzg = 'H' THEN bnkan * -1  -- H = Credit | Delivery Cost Share of Item Value
-      ELSE bnkan
-    END AS bnkan
-  FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.rseg`
-),
+  -- Subquery to flip debit/credit in to positive/negative
+  RBCO AS (
+    SELECT
+      * EXCEPT (wrbtr, bnkan_fw),
+      CASE
+        WHEN shkzg = 'S' THEN 'debit'
+        WHEN shkzg = 'H' THEN 'credit'
+      END AS dr_cr_flag,
+      CASE
+        WHEN shkzg = 'S' THEN wrbtr  -- Debit | Amount in document currency
+        WHEN shkzg = 'H' THEN wrbtr * -1  -- Credit | Amount in document currency
+        ELSE wrbtr
+      END AS wrbtr,
+      CASE
+        WHEN shkzg = 'S' THEN bnkan_fw  -- Debit | Delivery Cost Share of Item Value
+        WHEN shkzg = 'H' THEN bnkan_fw * -1  -- Credit | Delivery Cost Share of Item Value
+        ELSE bnkan_fw
+      END AS bnkan_fw
+    FROM
+      `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.rbco`
+  ),
 
--- Subquery to flip debit/credit in to positive/negative
-RBCO AS (
-  SELECT
-    * EXCEPT (wrbtr, bnkan_fw),
-    CASE
-      WHEN shkzg = 'S' THEN 'debit'
-      WHEN shkzg = 'H' THEN 'credit'
-    END AS dr_cr_flag,
-    CASE
-      WHEN shkzg = 'S' THEN wrbtr  -- Debit | Amount in document currency
-      WHEN shkzg = 'H' THEN wrbtr * -1  -- Credit | Amount in document currency
-      ELSE wrbtr
-    END AS wrbtr,
-    CASE
-      WHEN shkzg = 'S' THEN bnkan_fw  -- Debit | Delivery Cost Share of Item Value
-      WHEN shkzg = 'H' THEN bnkan_fw * -1  -- Credit | Delivery Cost Share of Item Value
-      ELSE bnkan_fw
-    END AS bnkan_fw
-  FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.rbco`
-),
-
-RSEG_RBCO AS (
-  SELECT
-    RBCO.cobl_nr,
-    RSEG.ebeln,
-    RSEG.ebelp,
-    RSEG.matnr,
-    RSEG.bwkey,
-    RSEG.bwtar,
-    RSEG.bstme,
-    RSEG.bprme,
-    RSEG.lbkum,
-    RSEG.vrkum,
-    RSEG.pstyp,
-    RSEG.knttp,
-    RSEG.bklas,
-    RSEG.erekz,
-    RSEG.exkbe,
-    RSEG.xekbz,
-    RSEG.tbtkz,
-    RSEG.spgrp,
-    RSEG.spgrm,
-    RSEG.spgrt,
-    RSEG.spgrg,
-    RSEG.spgrv,
-    RSEG.spgrq,
-    RSEG.spgrc,
-    RSEG.spgrext,
-    RSEG.bustw,
-    RSEG.xblnr,
-    RSEG.xrueb,
-    RSEG.bnkan,
-    RSEG.kschl,
-    RSEG.salk3,
-    RSEG.vmsal,
-    RSEG.xlifo,
-    RSEG.lfbnr,
-    RSEG.lfgja,
-    RSEG.lfpos,
-    RSEG.matbf,
-    RSEG.rbmng,
-    RSEG.bprbm,
-    RSEG.rbwwr,
-    RSEG.lfehl,
-    RSEG.gricd,
-    RSEG.grirg,
-    RSEG.gityp,
-    RSEG.packno,
-    RSEG.introw,
-    RSEG.kzmek,
-    RSEG.mrmok,
-    RSEG.stunr,
-    RSEG.zaehk,
-    RSEG.stock_posting,
-    RSEG.stock_posting_pp,
-    RSEG.stock_posting_py,
-    RSEG.werec,
-    RSEG.lifnr,
-    RSEG.frbnr,
-    RSEG.xhistma,
-    RSEG.complaint_reason,
-    RSEG.retamt_fc,
-    RSEG.retpc,
-    RSEG.retduedt,
-    RSEG.xrettaxnet,
-    RSEG.re_account,
-    RSEG.erp_contract_id,
-    RSEG.erp_contract_itm,
-    RSEG.srm_contract_id,
-    RSEG.srm_contract_itm,
-    RSEG.cont_pstyp,
-    RSEG.srvmapkey,
-    RSEG.charg,
-    RSEG.inv_itm_origin,
-    RSEG.invrel,
-    RSEG.xdinv,
-    RSEG.diff_amount,
-    RSEG.xcprf,
-    RSEG.fsh_season_year,
-    RSEG.fsh_season,
-    RSEG.fsh_collection,
-    RSEG.fsh_theme,
-    RSEG.licno,
-    RSEG.zeile,
-    RSEG.sgt_scat,
-    RSEG.wrf_charstc1,
-    RSEG.wrf_charstc2,
-    RSEG.wrf_charstc3,
-    RBCO.anln1,
-    RBCO.anln2,
-    RBCO.aplzl,
-    RBCO.aufnr,
-    RBCO.dabrz,
-    RBCO.fipos,
-    RBCO.fistl,
-    RBCO.fkber,
-    RBCO.geber,
-    RBCO.grant_nbr,
-    RBCO.gsber,
-    RBCO.imkey,
-    RBCO.kokrs,
-    RBCO.kostl,
-    RBCO.kstrg,
-    RBCO.paobjnr,
-    RBCO.prctr,
-    RBCO.ps_psp_pnr,
-    RBCO.recid,
-    RBCO.saknr,
-    RBCO.vbeln,
-    RBCO.vbelp,
-    RBCO.vptnr,
-    -- RBCO.zzspreg,
-    -- RBCO.zzbuspartn,
-    -- RBCO.zzproduct,
-    -- RBCO.zzloca,
-    -- RBCO.zzchan,
-    -- RBCO.zzlob,
-    -- RBCO.zznfal,
-    -- RBCO.zzuserfld1,
-    -- RBCO.zzuserfld2,
-    -- RBCO.zzuserfld3,
-    -- RBCO.zzregion,
-    -- RBCO.zzstate,
-    RBCO.xunpl,
-    RBCO.lstar,
-    RBCO.prznr,
-    RBCO.aufpl,
-    RBCO.bzdat,
-    RBCO.bnkan_fw,
-    RBCO.xnegp,
-    RBCO.erlkz,
-    RBCO.fikrs,
-    RBCO.kblnr,
-    RBCO.kblpos,
-    RBCO.pargb,
-    RBCO.pernr,
-    RBCO.nplnr,
-    RBCO.vornr,
-    RBCO.zuonr,
-    RBCO.mwart,
-    RBCO.fwbas,
-    RBCO.hwbas,
-    RBCO.abper,
-    RBCO.ledat,
-    RBCO.menge_f,
-    RBCO.bpmng_f,
-    RBCO.budget_pd,
-    RBCO.measure,
-    RBCO.fmfgus_key,
-    RBCO.koart,
-    RBCO.aa_final_ind,
-    RBCO.aa_final_qty,
-    RBCO.aa_final_qty_f,
-    RBCO.parked_qty,
-    RBCO.parked_qty_f,
-    COALESCE(RSEG.mandt, RBCO.mandt) AS mandt,
-    COALESCE(RSEG.belnr, RBCO.belnr) AS belnr,
-    COALESCE(RSEG.gjahr, RBCO.gjahr) AS gjahr,
-    COALESCE(RSEG.buzei, RBCO.buzei) AS buzei,
-    COALESCE(RSEG.zekkn, RBCO.zekkn) AS zekkn,
-    COALESCE(RSEG.bukrs, RBCO.bukrs) AS bukrs,
-    COALESCE(RSEG.werks, RBCO.werks) AS werks,
-    COALESCE(RSEG.wrbtr, RBCO.wrbtr) AS wrbtr,
-    COALESCE(RSEG.shkzg, RBCO.shkzg) AS shkzg,
-    COALESCE(RSEG.mwskz, RBCO.mwskz) AS mwskz,
-    COALESCE(RSEG.txjcd, RBCO.txjcd) AS txjcd,
-    COALESCE(RSEG.menge, RBCO.menge) AS menge,
-    COALESCE(RSEG.bpmng, RBCO.bpmng) AS bpmng,
-    COALESCE(RSEG.meins, RBCO.meins) AS meins,
-    COALESCE(RSEG.spgrs, RBCO.spgrs) AS spgrs,
-    COALESCE(RSEG.sgtxt, RBCO.sgtxt) AS sgtxt,
-    COALESCE(RSEG.xskrl, RBCO.xskrl) AS xskrl
-  FROM
-    RSEG
-  FULL OUTER JOIN
-    RBCO
-    ON
-      RSEG.mandt = RBCO.mandt
-      AND RSEG.belnr = RBCO.belnr
-      AND RSEG.gjahr = RBCO.gjahr
-      AND RSEG.buzei = RBCO.buzei
-)
+  RSEG_RBCO AS (
+    SELECT
+      RBCO.cobl_nr,
+      RSEG.ebeln,
+      RSEG.ebelp,
+      RSEG.matnr,
+      RSEG.bwkey,
+      RSEG.bwtar,
+      RSEG.bstme,
+      RSEG.bprme,
+      RSEG.lbkum,
+      RSEG.vrkum,
+      RSEG.pstyp,
+      RSEG.knttp,
+      RSEG.bklas,
+      RSEG.erekz,
+      RSEG.exkbe,
+      RSEG.xekbz,
+      RSEG.tbtkz,
+      RSEG.spgrp,
+      RSEG.spgrm,
+      RSEG.spgrt,
+      RSEG.spgrg,
+      RSEG.spgrv,
+      RSEG.spgrq,
+      RSEG.spgrc,
+      RSEG.spgrext,
+      RSEG.bustw,
+      RSEG.xblnr,
+      RSEG.xrueb,
+      RSEG.bnkan,
+      RSEG.kschl,
+      RSEG.salk3,
+      RSEG.vmsal,
+      RSEG.xlifo,
+      RSEG.lfbnr,
+      RSEG.lfgja,
+      RSEG.lfpos,
+      RSEG.matbf,
+      RSEG.rbmng,
+      RSEG.bprbm,
+      RSEG.rbwwr,
+      RSEG.lfehl,
+      RSEG.gricd,
+      RSEG.grirg,
+      RSEG.gityp,
+      RSEG.packno,
+      RSEG.introw,
+      RSEG.kzmek,
+      RSEG.mrmok,
+      RSEG.stunr,
+      RSEG.zaehk,
+      RSEG.stock_posting,
+      RSEG.stock_posting_pp,
+      RSEG.stock_posting_py,
+      RSEG.werec,
+      RSEG.lifnr,
+      RSEG.frbnr,
+      RSEG.xhistma,
+      RSEG.complaint_reason,
+      RSEG.retamt_fc,
+      RSEG.retpc,
+      RSEG.retduedt,
+      RSEG.xrettaxnet,
+      RSEG.re_account,
+      RSEG.erp_contract_id,
+      RSEG.erp_contract_itm,
+      RSEG.srm_contract_id,
+      RSEG.srm_contract_itm,
+      RSEG.cont_pstyp,
+      RSEG.srvmapkey,
+      RSEG.charg,
+      RSEG.inv_itm_origin,
+      RSEG.invrel,
+      RSEG.xdinv,
+      RSEG.diff_amount,
+      RSEG.xcprf,
+      RSEG.fsh_season_year,
+      RSEG.fsh_season,
+      RSEG.fsh_collection,
+      RSEG.fsh_theme,
+      RSEG.licno,
+      RSEG.zeile,
+      RSEG.sgt_scat,
+      RSEG.wrf_charstc1,
+      RSEG.wrf_charstc2,
+      RSEG.wrf_charstc3,
+      RBCO.anln1,
+      RBCO.anln2,
+      RBCO.aplzl,
+      RBCO.aufnr,
+      RBCO.dabrz,
+      RBCO.fipos,
+      RBCO.fistl,
+      RBCO.fkber,
+      RBCO.geber,
+      RBCO.grant_nbr,
+      RBCO.gsber,
+      RBCO.imkey,
+      RBCO.kokrs,
+      RBCO.kostl,
+      RBCO.kstrg,
+      RBCO.paobjnr,
+      RBCO.prctr,
+      RBCO.ps_psp_pnr,
+      RBCO.recid,
+      RBCO.saknr,
+      RBCO.vbeln,
+      RBCO.vbelp,
+      RBCO.vptnr,
+      -- RBCO.zzspreg,
+      -- RBCO.zzbuspartn,
+      -- RBCO.zzproduct,
+      -- RBCO.zzloca,
+      -- RBCO.zzchan,
+      -- RBCO.zzlob,
+      -- RBCO.zznfal,
+      -- RBCO.zzuserfld1,
+      -- RBCO.zzuserfld2,
+      -- RBCO.zzuserfld3,
+      -- RBCO.zzregion,
+      -- RBCO.zzstate,
+      RBCO.xunpl,
+      RBCO.lstar,
+      RBCO.prznr,
+      RBCO.aufpl,
+      RBCO.bzdat,
+      RBCO.bnkan_fw,
+      RBCO.xnegp,
+      RBCO.erlkz,
+      RBCO.fikrs,
+      RBCO.kblnr,
+      RBCO.kblpos,
+      RBCO.pargb,
+      RBCO.pernr,
+      RBCO.nplnr,
+      RBCO.vornr,
+      RBCO.zuonr,
+      RBCO.mwart,
+      RBCO.fwbas,
+      RBCO.hwbas,
+      RBCO.abper,
+      RBCO.ledat,
+      RBCO.menge_f,
+      RBCO.bpmng_f,
+      RBCO.budget_pd,
+      RBCO.measure,
+      RBCO.fmfgus_key,
+      RBCO.koart,
+      RBCO.aa_final_ind,
+      RBCO.aa_final_qty,
+      RBCO.aa_final_qty_f,
+      RBCO.parked_qty,
+      RBCO.parked_qty_f,
+      COALESCE(RSEG.mandt, RBCO.mandt) AS mandt,
+      COALESCE(RSEG.belnr, RBCO.belnr) AS belnr,
+      COALESCE(RSEG.gjahr, RBCO.gjahr) AS gjahr,
+      COALESCE(RSEG.buzei, RBCO.buzei) AS buzei,
+      COALESCE(RSEG.zekkn, RBCO.zekkn) AS zekkn,
+      COALESCE(RSEG.bukrs, RBCO.bukrs) AS bukrs,
+      COALESCE(RSEG.werks, RBCO.werks) AS werks,
+      COALESCE(RSEG.wrbtr, RBCO.wrbtr) AS wrbtr,
+      COALESCE(RSEG.shkzg, RBCO.shkzg) AS shkzg,
+      COALESCE(RSEG.mwskz, RBCO.mwskz) AS mwskz,
+      COALESCE(RSEG.txjcd, RBCO.txjcd) AS txjcd,
+      COALESCE(RSEG.menge, RBCO.menge) AS menge,
+      COALESCE(RSEG.bpmng, RBCO.bpmng) AS bpmng,
+      COALESCE(RSEG.meins, RBCO.meins) AS meins,
+      COALESCE(RSEG.spgrs, RBCO.spgrs) AS spgrs,
+      COALESCE(RSEG.sgtxt, RBCO.sgtxt) AS sgtxt,
+      COALESCE(RSEG.xskrl, RBCO.xskrl) AS xskrl
+    FROM
+      RSEG
+    FULL OUTER JOIN
+      RBCO
+      ON
+        RSEG.mandt = RBCO.mandt
+        AND RSEG.belnr = RBCO.belnr
+        AND RSEG.gjahr = RBCO.gjahr
+        AND RSEG.buzei = RBCO.buzei
+  )
 
 SELECT
   -- Primary Key
@@ -258,7 +241,6 @@ SELECT
   RBKP.cputm AS Enteredat_CPUTM,
   RBKP.vgart AS TransactnType_VGART,
   RBKP.xblnr AS Reference_XBLNR,
-  COALESCE(RBKP.bukrs, RSEG_RBCO.bukrs) AS CompanyCode_BUKRS,
   RBKP.lifnr AS InvoicingParty_LIFNR,
   RBKP.waers AS Currency_WAERS,
   RBKP.kursf AS Exchangerate_KURSF,
@@ -373,7 +355,6 @@ SELECT
   RBKP.erfnam AS EnteredBy_ERFNAM,
   RBKP.bupla AS Businessplace_BUPLA,
   RBKP.filkd AS Branch_FILKD,
-  COALESCE(RBKP.gsber, RSEG_RBCO.gsber) AS BusinessArea_GSBER,
   RBKP.lotkz AS LotNo_LOTKZ,
   RBKP.sgtxt AS Text_SGTXT,
   RBKP.inv_tran AS Transaction_INV_TRAN,
@@ -430,7 +411,6 @@ SELECT
   RSEG_RBCO.matbf AS MaterialinRespectofWhichStockisManaged_MATBF,
   RSEG_RBCO.rbmng AS QuantityInvoicedinSupplierInvoiceinPOOrderUnits_RBMNG,
   RSEG_RBCO.bprbm AS QuantityInvoicedinSupplierInvoiceinPOPriceUnits_BPRBM,
-  COALESCE(RSEG_RBCO.rbwwr * TCURX_WAER.currfix, RSEG_RBCO.rbwwr) AS InvoiceAmountinDocumentCurrencyofSupplierInvoice_RBWWR,
   RSEG_RBCO.lfehl AS TypeofSupplierError_LFEHL,
   RSEG_RBCO.gricd AS GrossIncomeTaxActivityCode_GRICD,
   RSEG_RBCO.grirg AS Region_GRIRG,
@@ -449,7 +429,6 @@ SELECT
   RSEG_RBCO.frbnr AS BillOfLading_FRBNR,
   RSEG_RBCO.xhistma AS UpdateMultipleAccountAssignment_XHISTMA,
   RSEG_RBCO.complaint_reason AS ComplaintsReason_COMPLAINT_REASON,
-  COALESCE(RSEG_RBCO.retamt_fc * TCURX_WAER.currfix, RSEG_RBCO.retamt_fc) AS RetentionAmount_RETAMT_FC,
   RSEG_RBCO.retpc AS RetentionPercent_RETPC,
   RSEG_RBCO.retduedt AS RetentionDueDate_RETDUEDT,
   RSEG_RBCO.xrettaxnet AS RetentionTaxReduction_XRETTAXNET,
@@ -464,7 +443,6 @@ SELECT
   RSEG_RBCO.inv_itm_origin AS InvoiceItemOrigin_INV_ITM_ORIGIN,
   RSEG_RBCO.invrel AS GroupingCharacteristic_INVREL,
   RSEG_RBCO.xdinv AS IndicatorInvoicingDifferential_XDINV,
-  COALESCE(RSEG_RBCO.diff_amount * TCURX_WAER.currfix, RSEG_RBCO.diff_amount) AS DifferenceAmount_DIFF_AMOUNT,
   RSEG_RBCO.xcprf AS IndicatorCommodityRepricing_XCPRF,
   RSEG_RBCO.fsh_season_year AS SeasonYear_FSH_SEASON_YEAR,
   RSEG_RBCO.fsh_season AS Season_FSH_SEASON,
@@ -493,7 +471,6 @@ SELECT
   RSEG_RBCO.paobjnr AS ProfitabilitySegmentNumber_PAOBJNR,
   RSEG_RBCO.prctr AS ProfitCenter_PRCTR,
   RSEG_RBCO.ps_psp_pnr AS WbsElement_PS_PSP_PNR,
-  PRPS.posid AS WbsElement_POSID,
   RSEG_RBCO.recid AS RulesforIssuinganInvoice_RECID,
   RSEG_RBCO.saknr AS GlAccount_SAKNR,
   RSEG_RBCO.vbeln AS SalesDocNum_VBELN,
@@ -504,7 +481,6 @@ SELECT
   RSEG_RBCO.prznr AS BusinessProcess_PRZNR,
   RSEG_RBCO.aufpl AS Routingnumberofoperationsintheorder_AUFPL,
   RSEG_RBCO.bzdat AS AssetValueDate_BZDAT,
-  COALESCE(RSEG_RBCO.bnkan_fw * TCURX_WAER.currfix, RSEG_RBCO.bnkan_fw) AS DeliveryCostsDistributionAmount_BNKAN_FW,
   RSEG_RBCO.xnegp AS IndicatorNegativePosting_XNEGP,
   RSEG_RBCO.erlkz AS UsedEarmarkedFunds_ERLKZ,
   RSEG_RBCO.fikrs AS FinancialManagementArea_FIKRS,
@@ -516,7 +492,6 @@ SELECT
   RSEG_RBCO.vornr AS OperationActivityNumber_VORNR,
   RSEG_RBCO.zuonr AS Assignmentnumber_ZUONR,
   RSEG_RBCO.mwart AS TaxType_MWART,
-  COALESCE(RSEG_RBCO.fwbas * TCURX_WAER.currfix, RSEG_RBCO.fwbas) AS TaxBaseAmount_FWBAS,
   RSEG_RBCO.hwbas AS TaxBaseLocalCurrencyAmount_HWBAS,
   RSEG_RBCO.abper AS SettlementPeriod_ABPER,
   RSEG_RBCO.ledat AS DeliveryCreationDate_LEDAT,
@@ -532,7 +507,6 @@ SELECT
   RSEG_RBCO.parked_qty AS ParkedInvoiceQuantity_PARKED_QTY,
   RSEG_RBCO.parked_qty_f AS ParkedInvoiceQuantityFloat_PARKED_QTY_F,
   RSEG_RBCO.werks AS Plant_WERKS,
-  COALESCE(RSEG_RBCO.wrbtr * TCURX_WAER.currfix, RSEG_RBCO.wrbtr) AS AmountinDocumentCurrency_WRBTR,
   RSEG_RBCO.shkzg AS DebitCreditIndicator_SHKZG,
   RSEG_RBCO.mwskz AS Taxonsalespurchasescode_MWSKZ,
   RSEG_RBCO.txjcd AS TaxJurisdiction_TXJCD,
@@ -541,7 +515,35 @@ SELECT
   RSEG_RBCO.meins AS BaseUnitofMeasure_MEINS,
   RSEG_RBCO.spgrs AS BlockingReasonItemAmount_SPGRS,
   RSEG_RBCO.sgtxt AS ItemText_SGTXT,
-  RSEG_RBCO.xskrl AS IndicatorLineItemCashDiscountNotLiable_XSKRL
+  RSEG_RBCO.xskrl AS IndicatorLineItemCashDiscountNotLiable_XSKRL,
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_BUDAT.CalYear AS YearOfPostingDate_BUDAT,
+  CalendarDateDimension_BUDAT.CalMonth AS MonthOfPostingDate_BUDAT,
+  CalendarDateDimension_BUDAT.CalWeek AS WeekOfPostingDate_BUDAT,
+  CalendarDateDimension_BUDAT.CalQuarter AS QuarterOfPostingDate_BUDAT,
+  CalendarDateDimension_BLDAT.CalYear AS YearOfDocumentDate_BLDAT,
+  CalendarDateDimension_BLDAT.CalMonth AS MonthOfDocumentDate_BLDAT,
+  CalendarDateDimension_BLDAT.CalWeek AS WeekOfDocumentDate_BLDAT,
+  CalendarDateDimension_BLDAT.CalQuarter AS QuarterOfDocumentDate_BLDAT,
+  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
+  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
+  -- currency_conversion.conv_date AS Conversion_date,
+  -- RSEG_RBCO.rbwwr * currency_conversion.UKURS AS InvoiceAmountInTargetCurrencyofSupplierInvoice_RBWWR,
+  -- RSEG_RBCO.retamt_fc * currency_conversion.UKURS AS RetentionAmountInTargetCurrency_RETAMT_FC,
+  -- RSEG_RBCO.diff_amount * currency_conversion.UKURS AS DifferenceAmountInTargetCurrency_DIFF_AMOUNT,
+  -- RSEG_RBCO.bnkan_fw * currency_conversion.UKURS AS DeliveryCostsDistributionAmountInTargetCurrency_BNKAN_FW,
+  -- RSEG_RBCO.fwbas * currency_conversion.UKURS AS TaxBaseAmountInTargetCurrency_FWBAS,
+  -- RSEG_RBCO.wrbtr * currency_conversion.UKURS AS AmountInTargetCurrency_WRBTR,
+  PRPS.posid AS WbsElement_POSID,
+  COALESCE(RBKP.bukrs, RSEG_RBCO.bukrs) AS CompanyCode_BUKRS,
+  COALESCE(RBKP.gsber, RSEG_RBCO.gsber) AS BusinessArea_GSBER,
+  COALESCE(RSEG_RBCO.rbwwr * TCURX_WAER.currfix, RSEG_RBCO.rbwwr) AS InvoiceAmountinDocumentCurrencyofSupplierInvoice_RBWWR,
+  COALESCE(RSEG_RBCO.retamt_fc * TCURX_WAER.currfix, RSEG_RBCO.retamt_fc) AS RetentionAmount_RETAMT_FC,
+  COALESCE(RSEG_RBCO.diff_amount * TCURX_WAER.currfix, RSEG_RBCO.diff_amount) AS DifferenceAmount_DIFF_AMOUNT,
+  COALESCE(RSEG_RBCO.bnkan_fw * TCURX_WAER.currfix, RSEG_RBCO.bnkan_fw) AS DeliveryCostsDistributionAmount_BNKAN_FW,
+  COALESCE(RSEG_RBCO.fwbas * TCURX_WAER.currfix, RSEG_RBCO.fwbas) AS TaxBaseAmount_FWBAS,
+  COALESCE(RSEG_RBCO.wrbtr * TCURX_WAER.currfix, RSEG_RBCO.wrbtr) AS AmountinDocumentCurrency_WRBTR
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.rbkp` AS RBKP
 INNER JOIN RSEG_RBCO
   ON RSEG_RBCO.mandt = RBKP.mandt
@@ -549,5 +551,26 @@ INNER JOIN RSEG_RBCO
     AND RSEG_RBCO.gjahr = RBKP.gjahr
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.prps` AS PRPS
   ON RSEG_RBCO.ps_psp_pnr = PRPS.pspnr
-LEFT JOIN TCURX AS TCURX_WAER
+-- Joining to this table(currency_decimal) is necesssary to fix the decimal place of
+-- amounts for non-decimal-based currencies. SAP stores these amounts
+-- offset by a factor  of 1/100 within the system (FYI this gets
+-- corrected when a user observes these in the GUI) Currencies w/
+-- decimals are unimpacted.
+-- Example of impacted currencies JPY, IDR, KRW, TWD
+-- Example of non-impacted currencies USD, GBP, EUR
+-- Example 1,000 JPY will appear as 10.00 JPY
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS TCURX_WAER
   ON RBKP.waers = TCURX_WAER.currkey
+--##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+-- LEFT JOIN
+--   `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+--   ON RBKP.mandt = currency_conversion.MANDT
+--     AND  RBKP.waers = currency_conversion.FCURR
+--     AND RBKP.budat = currency_conversion.conv_date
+--     AND currency_conversion.TCURR {{ currency }}
+--##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+--     AND currency_conversion.KURST = 'M'
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
+  ON CalendarDateDimension_BUDAT.Date = RBKP.budat
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
+  ON CalendarDateDimension_BLDAT.Date = RBKP.bldat

@@ -31,8 +31,8 @@
 
   SELECT
     #t6_out.msehi as unit_out, t6_out.dimid, t6_out.nennr, t6_out.zaehl, t6_in.msehi as unit_in,
-    # t6_in.nennr as to_nennr, t6_in.zaehl as to_zaehl, t6_in.to_conv, 
-    #(t6_out.exp10 - t6_in.exp10) as exp_pos, 
+    # t6_in.nennr as to_nennr, t6_in.zaehl as to_zaehl, t6_in.to_conv,
+    #(t6_out.exp10 - t6_in.exp10) as exp_pos,
     #(val_in * ( t6_out.zaehl * t6_in.nennr ) ) as num_neg,
     #(t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ ( - t6_out.exp10 - t6_in.exp10 ) ), 1 ) as denom_neg,
     #( val_in * ( (t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ (  t6_out.exp10 - t6_in.exp10 ) ), 1 ) ) )  as num_pos,
@@ -43,20 +43,20 @@
       (val_in * ( t6_out.zaehl * t6_in.nennr ) ) /  --Numerator
 
       (t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ ( - t6_out.exp10 - t6_in.exp10 ) ), 1 ) + -- Denominator
-        
-      ( (t6_out.addko - t6_in.addko ) * t6_in.to_conv ) * if(t6_in.exp10 <> 0, ( 10 ^ ( -t6_in.exp10 ) ), 1 ),   -- Addition 
+
+      ( (t6_out.addko - t6_in.addko ) * t6_in.to_conv ) * if(t6_in.exp10 <> 0, ( 10 ^ ( -t6_in.exp10 ) ), 1 ),   -- Addition
      --if t6_out.exp10 - t6_in.exp10 > 0 POS
 
      ( val_in * ( (t6_in.zaehl * t6_out.nennr ) * if(t6_out.exp10 > 0  and t6_in.exp10 > 0, (10 ^ (  t6_out.exp10 - t6_in.exp10 ) ), 1 ) ) -- Numerator
 
-     / ( t6_out.zaehl * t6_in.nennr ) ) + -- Denominator 
-     
+     / ( t6_out.zaehl * t6_in.nennr ) ) + -- Denominator
+
      if (t6_out.addko - t6_in.addko <> 0 ,
-     
+
       ( (t6_out.addko - t6_in.addko ) * t6_in.to_conv ) * if(t6_in.exp10 <>0, ( 10 ^ ( -t6_in.exp10 ) ), 1 )
 
       ,0 )
-     
+
      ) as val_out
   FROM t6_out INNER JOIN t6_in ON t6_out.mandt = t6_in.mandt
-)
+) -- noqa

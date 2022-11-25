@@ -191,7 +191,7 @@ SELECT
   --STPO.ECN_TO_RKEY AS ChangeNumberTo_ECN_TO_RKEY,
   -- STPO.ABLAD AS UnloadingPoint_ABLAD,
   -- STPO.WEMPF AS GoodsRecipient_WEMPF,
-  STPO.CUFACTOR AS Cu_NumberOfCuInstances_CUFACTOR,
+  -- STPO.CUFACTOR AS Cu_NumberOfCuInstances_CUFACTOR,
   STPO.FSH_VMKZ AS DeviationValuesMaintainedForComponentAtVariantLevel_FSH_VMKZ,
   STPO.FSH_PGQR AS QuantityDistributionProfile_FSH_PGQR,
   STPO.FSH_PGQRRF AS ReferenceToQuantityDistributionProfile_FSH_PGQRRF,

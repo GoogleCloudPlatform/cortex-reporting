@@ -34,7 +34,7 @@ SELECT
           CompaniesMD.FiscalyearVariant_PERIV,
           AccountingDocuments.PostingDateInTheDocument_BUDAT),
         'DATA ISSUE'))) AS Period,
-  IF(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Period_s4`(AccountingDocuments.Client_MANDT,
+  IF(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Period`(AccountingDocuments.Client_MANDT,
       CompaniesMD.FiscalyearVariant_PERIV,
       CURRENT_DATE()) = 'CASE1',
     `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case1`(AccountingDocuments.Client_MANDT,

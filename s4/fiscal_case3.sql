@@ -17,4 +17,4 @@
             FROM
             Ip_Date)AS STRING),
           Bdatj), Bumon, Butag) >= FORMAT_TIMESTAMP('%Y%m%d', Ip_Date) )
-);
+)

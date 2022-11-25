@@ -165,6 +165,8 @@ SELECT
   -- DD07T.DDLANGUAGE AS ReturnOrderDescriptionLanguage,
   -- DD07T.DDTEXT AS ReturnOrderDescription,
   TVFST.BillingBlockReason_VTEXT AS BillingBlockReasonDescription,
+--## CORTEX-CUSTOMER: Consider adding relevant languages to case statement. Alternatively, use DD07T
+--## or (preferrably) a smaller custom table to map relevant texts as in comments below
   CASE SalesOrders.OverallProcessingStatus_GBSTK
     WHEN 'A' THEN 'Not yet Processed'
     WHEN 'B' THEN 'Partially Processed'

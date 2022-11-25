@@ -9,3 +9,4 @@ substitutions:
   _MANDT: ""
 options:
   substitution_option: "ALLOW_LOOSE"
+  machineType: "E2_HIGHCPU_32"

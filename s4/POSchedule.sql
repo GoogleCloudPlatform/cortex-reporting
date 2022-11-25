@@ -71,7 +71,19 @@ SELECT
   eket.DNG_DATE AS CreationDateOfReminderMessageRecord_DNG_DATE,
   eket.DNG_TIME AS CreationTimeOfReminderMessageRecord_DNG_TIME,
   eket.CNCL_ANCMNT_DONE AS CancellationThreatMade_CNCL_ANCMNT_DONE,
-  eket.DATESHIFT_NUMBER AS NumberOfCurrentDateShifts_DATESHIFT_NUMBER
+  eket.DATESHIFT_NUMBER AS NumberOfCurrentDateShifts_DATESHIFT_NUMBER,
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_EINDT.CalYear AS YearOfItemDeliveryDate_EINDT,
+  CalendarDateDimension_EINDT.CalMonth AS MonthOfItemDeliveryDate_EINDT,
+  CalendarDateDimension_EINDT.CalWeek AS WeekOfItemDeliveryDate_EINDT,
+  CalendarDateDimension_EINDT.CalQuarter AS QuarterOfItemDeliveryDate_EINDT,
+  CalendarDateDimension_BEDAT.CalYear AS YearOfOrderDateOfScheduleLine_BEDAT,
+  CalendarDateDimension_BEDAT.CalMonth AS MonthOfOrderDateOfScheduleLine_BEDAT,
+  CalendarDateDimension_BEDAT.CalWeek AS WeekOfOrderDateOfScheduleLine_BEDAT,
+  CalendarDateDimension_BEDAT.CalQuarter AS QuarterOfOrderDateOfScheduleLine_BEDAT
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.eket` AS eket
-
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_EINDT
+  ON CalendarDateDimension_EINDT.Date = eket.EINDT
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BEDAT
+  ON CalendarDateDimension_BEDAT.Date = eket.BEDAT

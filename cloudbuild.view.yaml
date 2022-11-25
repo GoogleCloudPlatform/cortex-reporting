@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 steps:
-  - name: gcr.io/kittycorn-public/deploy-kittycorn:v1.2
+  - name: gcr.io/kittycorn-public/deploy-kittycorn:v1.5
     entrypoint: "bash"
     args:
       - "-c"

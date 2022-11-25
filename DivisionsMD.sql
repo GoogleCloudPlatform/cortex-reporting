@@ -12,8 +12,8 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-{% set switch = sql_flavour -%}
 
+-- noqa: PRS
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.DivisionsMD`
 OPTIONS(
 description = "Divisions Master Data"

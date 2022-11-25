@@ -11,7 +11,7 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-
+-- noqa: PRS
 {% if sql_flavour == 'ecc' -%}
  CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.csks_hier` (
   mandt STRING,
@@ -20,7 +20,9 @@
   child STRING,
   child_org STRING,
   kostl STRING );
-  CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CostCenterAmountsHierarchy_SAMPLE`
+
+
+CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CostCenterAmountsHierarchy_SAMPLE`
 OPTIONS(
 description = "Sample with cost centers and amount represented in flattened hierarchy"
 )
@@ -36,7 +38,8 @@ CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.
   child STRING,
   child_org STRING,
   kostl STRING );
-  CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CostCenterAmountsHierarchy_SAMPLE`
+
+CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CostCenterAmountsHierarchy_SAMPLE`
 OPTIONS(
 description = " Sample with cost centers and amount represented in flattened hierarchy "
 )

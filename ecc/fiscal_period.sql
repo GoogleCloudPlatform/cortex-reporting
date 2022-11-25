@@ -12,4 +12,4 @@
     WHERE
       Mandt = Ip_Mandt
       AND Periv = Ip_Periv )
-);
+)

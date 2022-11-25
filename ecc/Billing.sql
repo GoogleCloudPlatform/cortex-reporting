@@ -8,8 +8,6 @@ WITH AGGKONV AS (
     `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.konv` AS KONV
   GROUP BY knumv, kposn, mandt
 )
-
-
 SELECT
   VBRK.MANDT AS Client_MANDT,
   VBRK.FKART AS BillingType_FKART,
@@ -52,7 +50,6 @@ SELECT
   VBRK.POPER AS PostingPeriod_POPER,
   VBRK.ERDAT AS RecordCreationDate_ERDAT,
   VBRK.AEDAT AS LastChangeDate_AEDAT,
-  VBRK.MWSBK AS TaxAmount_MWSBK,
   VBRK.KDGRP AS CustomerGroup_KDGRP,
   VBRK.ZLSCH AS PaymentMethod_ZLSCH,
   VBRK.BUKRS AS CompanyCode_BUKRS,
@@ -101,21 +98,29 @@ SELECT
   VBRP.AUBEL AS SalesDocument_AUBEL,
   VBRP.AUPOS AS SalesDocumentItem_AUPOS,
   VBRP.FKIMG AS ActualBilledQuantity_FKIMG,
-  VBRP.NETWR AS NetValue_NETWR,
   VBRP.VOLUM AS Volume_VOLUM,
   VBRP.BRGEW AS GrossWeight_BRGEW,
   VBRP.NTGEW AS NetWeight_NTGEW,
   AGGKONV.KNUMV AS NumberOfTheDocumentCondition_KNUMV,
   AGGKONV.KPOSN AS ConditionItemNumber_KPOSN,
-  AGGKONV.rebate AS Rebate,
-  EXTRACT(YEAR FROM VBRK.FKDAT) AS YearOfBillingDate_FKDAT,
-  EXTRACT(MONTH FROM VBRK.FKDAT) AS MonthOfBillingDate_FKDAT,
-  EXTRACT(WEEK FROM VBRK.FKDAT) AS WeekOfBillingDate_FKDAT,
-  EXTRACT(DAY FROM VBRK.FKDAT) AS DayOfBillingDate_FKDAT,
-  COUNT(VBRK.VBELN) OVER(PARTITION BY EXTRACT(YEAR FROM VBRK.FKDAT)) AS YearOrderCount,
-  COUNT(VBRK.VBELN) OVER(PARTITION BY EXTRACT(YEAR FROM VBRK.FKDAT), EXTRACT(MONTH FROM VBRK.FKDAT)) AS MonthOrderCount,
-  COUNT(VBRK.VBELN) OVER(PARTITION BY EXTRACT(YEAR FROM VBRK.FKDAT), EXTRACT(MONTH FROM VBRK.FKDAT), EXTRACT(WEEK FROM VBRK.FKDAT)) AS WeekOrderCount
-
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_FKDAT.CalYear AS YearOfBillingDate_FKDAT,
+  CalendarDateDimension_FKDAT.CalMonth AS MonthOfBillingDate_FKDAT,
+  CalendarDateDimension_FKDAT.CalWeek AS WeekOfBillingDate_FKDAT,
+  CalendarDateDimension_FKDAT.CalQuarter AS DayOfBillingDate_FKDAT,
+  -- ##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
+  -- currency_conversion.conv_date AS Conversion_date,
+  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
+  -- VBRP.NETWR * currency_conversion.UKURS AS NetValueInTargetCurrency_NETWR,
+  -- VBRK.MWSBK * currency_conversion.UKURS AS TaxAmountInTargetCurrency_MWSBK,
+  -- AGGKONV.rebate * currency_conversion.UKURS AS RebateInTargetCurrency,
+  COALESCE(VBRP.NETWR * currency_decimal.CURRFIX, VBRP.NETWR) AS NetValue_NETWR,
+  COALESCE(VBRK.MWSBK * currency_decimal.CURRFIX, VBRK.MWSBK) AS TaxAmount_MWSBK,
+  COALESCE(AGGKONV.rebate * currency_decimal.CURRFIX, AGGKONV.rebate) AS Rebate,
+  COUNT(VBRK.VBELN) OVER(PARTITION BY CalendarDateDimension_FKDAT.CalYear) AS YearOrderCount,
+  COUNT(VBRK.VBELN) OVER(PARTITION BY CalendarDateDimension_FKDAT.CalYear, CalendarDateDimension_FKDAT.CalMonth) AS MonthOrderCount,
+  COUNT(VBRK.VBELN) OVER(PARTITION BY CalendarDateDimension_FKDAT.CalYear, CalendarDateDimension_FKDAT.CalMonth, CalendarDateDimension_FKDAT.CalWeek) AS WeekOrderCount
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbrk` AS VBRK
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbrp` AS VBRP
   ON
@@ -125,3 +130,15 @@ LEFT JOIN AGGKONV
   ON AGGKONV.KNUMV = VBRK.KNUMV
     AND AGGKONV.KPOSN = VBRP.POSNR
     AND AGGKONV.MANDT = VBRP.MANDT
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+  ON vbrk.WAERK = currency_decimal.CURRKEY
+-- ##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+-- LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+--   ON VBRK.MANDT = currency_conversion.MANDT
+--     AND VBRK.WAERK = currency_conversion.FCURR
+--     AND VBRK.FKDAT = currency_conversion.conv_date
+--     AND currency_conversion.TCURR {{ currency }}
+-- ##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+--     AND currency_conversion.KURST = 'M'
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_FKDAT
+  ON CalendarDateDimension_FKDAT.Date = VBRK.FKDAT

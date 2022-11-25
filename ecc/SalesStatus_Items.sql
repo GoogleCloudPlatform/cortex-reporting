@@ -20,7 +20,7 @@ SELECT SO.Client_MANDT,
   vbap.ProductHierarchy_PRODH,
   mat.Language_SPRAS
 FROM `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SDDocumentFlow`AS SO
-INNER JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SalesOrders` AS vbap
+INNER JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SalesOrders_V2` AS vbap
   ON SO.Client_MANDT = vbap.Client_MANDT
     AND SO.SalesOrder_VBELV = vbap.SalesDocument_VBELN AND SO.SalesItem_POSNV = vbap.Item_POSNR
 INNER JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialsMD` AS mat

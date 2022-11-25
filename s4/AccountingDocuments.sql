@@ -64,7 +64,7 @@ WITH BSEG AS (
     ),
     CASE
       WHEN shkzg = 'S' THEN DMBTR -- When debit = keep it the way it is
-      WHEN shkzg = 'H' THEN DMBTR * -1 -- When credit = make it negative 
+      WHEN shkzg = 'H' THEN DMBTR * -1 -- When credit = make it negative
       ELSE DMBTR
     END AS DMBTR,
     CASE
@@ -349,23 +349,6 @@ WITH BSEG AS (
     END AS PENFC
   FROM
     `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.bseg`
-),
-
-tcurx AS (
-  -- Joining to this table is necesssary to fix the decimal place of 
-  -- amounts for non-decimal-based currencies. SAP stores these amounts 
-  -- offset by a factor  of 1/100 within the system (FYI this gets 
-  -- corrected when a user observes these in the GUI) Currencies w/ 
-  -- decimals are unimpacted.
-  --
-  -- Example of impacted currencies JPY, IDR, KRW, TWD 
-  -- Example of non-impacted currencies USD, GBP, EUR
-  -- Example 1,000 JPY will appear as 10.00 JPY
-  SELECT DISTINCT
-    CURRKEY,
-    CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
-  FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tcurx`
 )
 
 SELECT
@@ -766,6 +749,33 @@ SELECT
   BSEG.FMXZEKKN AS FmReferenceSequenceAccountAssignment_FMXZEKKN,
   BSEG.PRODPER AS ProductionMonth__dateToFindPeriodAndYear___PRODPER,
   BSEG.RECRF AS ServiceTaxRecreditFlag_RECRF,
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_H_BUDAT.CalYear AS YearOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_H_BUDAT.CalMonth AS MonthOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_H_BUDAT.CalWeek AS WeekOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_H_BUDAT.CalQuarter AS QuarterOfPostingDateInTheDocument_BUDAT,
+  CalendarDateDimension_BLDAT.CalYear AS YearOfDocumentDateInDocument_BLDAT,
+  CalendarDateDimension_BLDAT.CalMonth AS MonthOfDocumentDateInDocument_BLDAT,
+  CalendarDateDimension_BLDAT.CalWeek AS WeekOfDocumentDateInDocument_BLDAT,
+  CalendarDateDimension_BLDAT.CalQuarter AS QuarterOfDocumentDateInDocument_BLDAT,
+  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
+  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
+  -- currency_conversion.conv_date AS Conversion_date,
+  -- BSEG.DMBTR * currency_conversion.UKURS AS AmountInTargetCurrency_DMBTR,
+  -- BSEG.KZBTR * currency_conversion.UKURS AS OriginalReductionAmountInTargetCurrency_KZBTR,
+  -- BSEG.TXBHW * currency_conversion.UKURS AS OriginalTaxBaseAmountInTargetCurrency_TXBHW,
+  -- BSEG.MWSTS * currency_conversion.UKURS AS TaxAmountInTargetCurrency_MWSTS,
+  -- BSEG.HWBAS * currency_conversion.UKURS AS TaxBaseAmountInTargetCurrency_HWBAS,
+  -- BSEG.HWZUZ * currency_conversion.UKURS AS ProvisionAmountInTargetCurrency_HWZUZ,
+  -- BSEG.GBETR * currency_conversion.UKURS AS HedgedAmountInTargetCurrency_GBETR,
+  -- BSEG.SKNTO * currency_conversion.UKURS AS CashDiscountAmountInTargetCurrency_SKNTO,
+  -- BSEG.DMBT1 * currency_conversion.UKURS AS AmountInTargetCurrencyForTaxDistribution_DMBT1,
+  -- BSEG.WRBT1 * currency_conversion.UKURS AS AmountInTargetCurrencyForTaxBreakdown_WRBT1,
+  -- BSEG.KLIBT * currency_conversion.UKURS AS CreditControlAmountInTargetCurrency_KLIBT,
+  -- BSEG.BONFB * currency_conversion.UKURS AS AmountQualifyingForBonusInTargetCurrency_BONFB,
+  -- BSEG.PENLC1 * currency_conversion.UKURS AS PenaltyChargeAmountInFirstTargetCurrency_PENLC1,
+  -- IF(BSEG.AUGDT IS NULL, BSEG.DMBTR * currency_conversion.UKURS, 0) AS AmountInTargetCurrencyClearingDate_DMBTR,
   COALESCE(BSEG.DMBTR * TCURXHWAER.CURRFIX, BSEG.DMBTR) AS AmountInLocalCurrency_DMBTR,
   COALESCE(BSEG.WRBTR * TCURXWAERS.CURRFIX, BSEG.WRBTR) AS AmountInDocumentCurrency_WRBTR,
   COALESCE(BSEG.KZBTR * TCURXHWAER.CURRFIX, BSEG.KZBTR) AS OriginalReductionAmountInLocalCurrency_KZBTR,
@@ -794,17 +804,17 @@ SELECT
   COALESCE(BSEG.QSFBT * TCURXWAERS.CURRFIX, BSEG.QSFBT) AS WithholdingTaxExemptAmount_QSFBT,
   COALESCE(BSEG.BONFB * TCURXHWAER.CURRFIX, BSEG.BONFB) AS AmountQualifyingForBonusInLocalCurrency_BONFB,
   COALESCE(BSEG.DMBE2 * TCURXHWAE2.CURRFIX, BSEG.DMBE2) AS AmountInSecondLocalCurrency_DMBE2,
-  --BSEG.ZZSPREG AS SpecialRegion_ZZSPREG,  
-  --BSEG.ZZBUSPARTN AS BusinessPartner_ZZBUSPARTN,  
-  --BSEG.ZZCHAN AS DistributionChannel_ZZCHAN,  
-  --BSEG.ZZPRODUCT AS ProductGroup_ZZPRODUCT,  
+  --BSEG.ZZSPREG AS SpecialRegion_ZZSPREG,
+  --BSEG.ZZBUSPARTN AS BusinessPartner_ZZBUSPARTN,
+  --BSEG.ZZCHAN AS DistributionChannel_ZZCHAN,
+  --BSEG.ZZPRODUCT AS ProductGroup_ZZPRODUCT,
   --BSEG.ZZLOCA AS City_ZZLOCA,
-  --BSEG.ZZLOB AS BusinessLine_ZZLOB,  
-  --BSEG.ZZUSERFLD1 AS Territory_ZZUSERFLD1,  
-  --BSEG.ZZUSERFLD2 AS Ownercont_ZZUSERFLD2,  
-  --BSEG.ZZUSERFLD3 AS Vein_ZZUSERFLD3,  
+  --BSEG.ZZLOB AS BusinessLine_ZZLOB,
+  --BSEG.ZZUSERFLD1 AS Territory_ZZUSERFLD1,
+  --BSEG.ZZUSERFLD2 AS Ownercont_ZZUSERFLD2,
+  --BSEG.ZZUSERFLD3 AS Vein_ZZUSERFLD3,
   --BSEG.ZZSTATE AS StateprovinceCode_ZZSTATE,
-  --BSEG.ZZREGION AS Location_ZZREGION,  
+  --BSEG.ZZREGION AS Location_ZZREGION,
   COALESCE(BSEG.DMBE3 * TCURXHWAE3.CURRFIX, BSEG.DMBE3) AS AmountInThirdLocalCurrency_DMBE3,
   COALESCE(BSEG.DMB21 * TCURXHWAE2.CURRFIX, BSEG.DMB21) AS AmountInSecondLocalCurrencyForTaxBreakdown_DMB21,
   COALESCE(BSEG.DMB22 * TCURXHWAE2.CURRFIX, BSEG.DMB22) AS AmountInSecondLocalCurrencyForTaxBreakdown_DMB22,
@@ -854,13 +864,35 @@ INNER JOIN BSEG AS BSEG
     AND BKPF.BUKRS = BSEG.BUKRS
     AND BKPF.GJAHR = BSEG.GJAHR
     AND BKPF.BELNR = BSEG.BELNR
-LEFT JOIN tcurx AS TCURXWAERS
+-- Joining to this table(currency_decimal) is necesssary to fix the decimal place of
+-- amounts for non-decimal-based currencies. SAP stores these amounts
+-- offset by a factor  of 1/100 within the system (FYI this gets
+-- corrected when a user observes these in the GUI) Currencies w/
+-- decimals are unimpacted.
+-- Example of impacted currencies JPY, IDR, KRW, TWD
+-- Example of non-impacted currencies USD, GBP, EUR
+-- Example 1,000 JPY will appear as 10.00 JPY
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXWAERS
   ON BKPF.WAERS = TCURXWAERS.CURRKEY
-LEFT JOIN tcurx AS TCURXHWAER
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXHWAER
   ON BKPF.HWAER = TCURXHWAER.CURRKEY
-LEFT JOIN tcurx AS TCURXHWAE2
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXHWAE2
   ON BKPF.HWAE2 = TCURXHWAE2.CURRKEY
-LEFT JOIN tcurx AS TCURXHWAE3
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXHWAE3
   ON BKPF.HWAE3 = TCURXHWAE3.CURRKEY
-LEFT JOIN tcurx AS TCURXPSWSL
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXPSWSL
   ON BSEG.PSWSL = TCURXPSWSL.CURRKEY
+--##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+--## Consider applying currency conversion on other currency keys as per your requirement
+-- LEFT JOIN
+--   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--   ON BKPF.MANDT = currency_conversion.MANDT
+--     AND BKPF.HWAER = currency_conversion.FCURR
+--     AND BSEG.H_BUDAT = currency_conversion.conv_date
+--     AND currency_conversion.TCURR {{ currency }}
+--##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+--     AND currency_conversion.KURST = 'M'
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_H_BUDAT
+  ON CalendarDateDimension_H_BUDAT.Date = BSEG.H_BUDAT
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
+  ON CalendarDateDimension_BLDAT.Date = BKPF.BLDAT

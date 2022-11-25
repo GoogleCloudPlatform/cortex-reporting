@@ -1,50 +1,3 @@
-(WITH
-tcurx AS (
-  -- Joining to this table is necesssary to fix the decimal place of
-  -- amounts for non-decimal-based currencies. SAP stores these amounts
-  -- offset by a factor  of 1/100 within the system (FYI this gets
-  -- corrected when a user observes these in the GUI) Currencies w/
-  -- decimals are unimpacted.
-  --
-  -- Example of impacted currencies JPY, IDR, KRW, TWD
-  -- Example of non-impacted currencies USD, GBP, EUR
-  -- Example 1,000 JPY will appear as 10.00 JPY
-  SELECT DISTINCT
-    CURRKEY,
-    CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
-  FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tcurx`
-),
-
-conv AS (
-  -- This table is used to convert rates from the transaction currency to USD.
-  SELECT DISTINCT
-    mandt,
-    fcurr,
-    tcurr,
-    ukurs,
-    PARSE_DATE("%Y%m%d", CAST(99999999 - CAST(gdatu AS INT64) AS STRING)) AS gdatu
-  FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.tcurr`
-  WHERE
-    mandt = '{{ mandt_s4 }}'
-    AND kurst = "M" -- Daily Corporate Rate
-    AND tcurr {{ currency }} -- Convert to USD
-
-  UNION ALL
-## CORTEX-CUSTOMER: Replace with currency of choice, or add additional currencies
-## as a union clause
-  -- USD to USD rates do not exist in TCURR (or any other rates that are same-to-
-  -- same such as EUR to EUR / JPY to JPY etc.
-  SELECT
-    '{{ mandt_s4 }}' AS mandt,
-    "USD" AS fcurr,
-    "USD" AS tcurr,
-    1 AS ukurs,
-    date_array AS gdatu
-  FROM
-    UNNEST(GENERATE_DATE_ARRAY("1990-01-01", "2060-12-31")) AS date_array
-)
-
 SELECT
   ekpo.MANDT AS Client_MANDT,
   ekpo.EBELN AS DocumentNumber_EBELN,
@@ -72,7 +25,6 @@ SELECT
   ekko.EKGRP AS PurchasingGroup_EKGRP,
   ekko.WAERS AS CurrencyKey_WAERS,
   ekko.WKURS AS ExchangeRate_WKURS,
-  conv.UKURS AS ExchangeRateUSD_UKURS,
   ekko.KUFIX AS FlagFixingExchangeRate_KUFIX,
   ekko.BEDAT AS PurchasingDocumentDate_BEDAT,
   ekko.KDATB AS StartValidityPeriod_KDATB,
@@ -422,25 +374,50 @@ SELECT
   ekpo.PUT_BACK AS FlagforPuttingBackfromGroupedPODocument_PUT_BACK,
   ekpo.POL_ID AS OrderListItemNumber_POL_ID,
   ekpo.CONS_ORDER AS PurchaseOrderforConsignment_CONS_ORDER,
-  COALESCE(ekpo.NETPR * tcurx.CURRFIX, ekpo.NETPR) AS NetPrice_NETPR,
-  COALESCE(ekpo.NETPR * tcurx.CURRFIX, ekpo.NETPR) * conv.UKURS AS NetPriceUSD_NETPR,
-  COALESCE(ekpo.NETWR * tcurx.CURRFIX, ekpo.NETWR) AS NetOrderValueinPOCurrency_NETWR,
-  COALESCE(ekpo.BRTWR * tcurx.CURRFIX, ekpo.BRTWR) AS GrossOrderValueinPOcurrency_BRTWR,
-  COALESCE(ekpo.NETWR * tcurx.CURRFIX, ekpo.NETWR) * conv.UKURS AS NetOrderValueinPOCurrencyUSD_NETWR,
-  COALESCE(ekpo.BRTWR * tcurx.CURRFIX, ekpo.BRTWR) * conv.UKURS AS GrossOrderValueinPOcurrencyUSD_BRTWR,
-  COALESCE(ekpo.ZWERT * tcurx.currfix, ekpo.ZWERT) AS TargetValueforOutlineAgreementinDocumentCurrency_ZWERT,
-  COALESCE(ekpo.ZWERT * tcurx.currfix, ekpo.ZWERT) * conv.UKURS AS TargetValueforOutlineAgreementinDocumentCurrencyUSD_ZWERT,
-  COALESCE(ekpo.EFFWR * tcurx.CURRFIX, ekpo.EFFWR) AS Effectivevalueofitem_EFFWR,
-  COALESCE(ekpo.EFFWR * tcurx.CURRFIX, ekpo.EFFWR) * conv.UKURS AS EffectivevalueofitemUSD_EFFWR,
-  COALESCE(ekpo.GNETWR, tcurx.CURRFIX, ekpo.GNETWR) AS Currentlynotused_GNETWR,
-  COALESCE(ekpo.BONBA * tcurx.currfix, ekpo.BONBA) AS Rebatebasis1_BONBA
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_AEDAT.CalYear AS YearOfChangeDate_AEDAT,
+  CalendarDateDimension_AEDAT.CalMonth AS MonthOfChangeDate_AEDAT,
+  CalendarDateDimension_AEDAT.CalWeek AS WeekOfChangeDate_AEDAT,
+  CalendarDateDimension_AEDAT.CalQuarter AS QuarterOfChangeDate_AEDAT,
+  CalendarDateDimension_BEDAT.CalYear AS YearOfPurchasingDocumentDate_BEDAT,
+  CalendarDateDimension_BEDAT.CalMonth AS MonthOfPurchasingDocumentDate_BEDAT,
+  CalendarDateDimension_BEDAT.CalWeek AS WeekOfPurchasingDocumentDate_BEDAT,
+  CalendarDateDimension_BEDAT.CalQuarter AS QuarterOfPurchasingDocumentDate_BEDAT,
+  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
+  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
+  -- currency_conversion.conv_date AS Conversion_date,
+  -- ekpo.NETPR * currency_conversion.UKURS AS NetPriceInTargetCurrency_NETPR,
+  -- ekpo.NETWR * currency_conversion.UKURS AS NetOrderValueInTargetCurrency_NETWR,
+  -- ekpo.BRTWR * currency_conversion.UKURS AS GrossOrderValueInTargetCurrency_BRTWR,
+  -- ekpo.ZWERT * currency_conversion.UKURS AS TargetValueforOutlineAgreementInTargetCurrency_ZWERT,
+  -- ekpo.EFFWR * currency_conversion.UKURS AS EffectiveValueofitemInTargetCurrency_EFFWR,
+  -- ekpo.GNETWR * currency_conversion.UKURS AS CurrentlyNotUsedInTargetCurrency_GNETWR,
+  -- ekpo.BONBA * currency_conversion.UKURS AS RebateBasis1InTargetCurrency_BONBA,
+  COALESCE(ekpo.NETPR * currency_decimal.CURRFIX, ekpo.NETPR) AS NetPrice_NETPR,
+  COALESCE(ekpo.NETWR * currency_decimal.CURRFIX, ekpo.NETWR) AS NetOrderValueinPOCurrency_NETWR,
+  COALESCE(ekpo.BRTWR * currency_decimal.CURRFIX, ekpo.BRTWR) AS GrossOrderValueinPOcurrency_BRTWR,
+  COALESCE(ekpo.ZWERT * currency_decimal.CURRFIX, ekpo.ZWERT) AS TargetValueforOutlineAgreementinDocumentCurrency_ZWERT,
+  COALESCE(ekpo.EFFWR * currency_decimal.CURRFIX, ekpo.EFFWR) AS Effectivevalueofitem_EFFWR,
+  COALESCE(ekpo.GNETWR * currency_decimal.CURRFIX, ekpo.GNETWR) AS Currentlynotused_GNETWR,
+  COALESCE(ekpo.BONBA * currency_decimal.CURRFIX, ekpo.BONBA) AS Rebatebasis1_BONBA
+
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.ekko` AS ekko
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.ekpo` AS ekpo
-  ON ekko.MANDT = ekpo.mandt AND ekko.EBELN = ekpo.ebeln
-LEFT JOIN tcurx
-  ON ekko.WAERS = tcurx.CURRKEY
-LEFT JOIN conv
-  ON ekko.MANDT = conv.MANDT
-    AND ekko.WAERS = conv.FCURR
-    AND CAST(ekko.aedat AS DATE) = conv.GDATU
-)
+  ON ekko.MANDT = ekpo.MANDT
+    AND ekko.EBELN = ekpo.EBELN
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+  ON ekko.WAERS = currency_decimal.CURRKEY
+--##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+-- LEFT JOIN
+--   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--   ON ekko.MANDT = currency_conversion.MANDT
+--     AND ekko.WAERS = currency_conversion.FCURR
+--     AND ekko.AEDAT = currency_conversion.conv_date
+--     AND currency_conversion.TCURR {{ currency }}
+--     --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+--     AND currency_conversion.KURST = 'M'
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_AEDAT
+  ON CalendarDateDimension_AEDAT.Date = ekko.AEDAT
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BEDAT
+  ON CalendarDateDimension_BEDAT.Date = ekko.BEDAT

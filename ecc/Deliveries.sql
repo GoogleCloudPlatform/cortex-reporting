@@ -1,20 +1,3 @@
-WITH TCURX AS (
-  -- Joining to this table is necesssary to fix the decimal place of 
-  -- amounts for non-decimal-based currencies. SAP stores these amounts 
-  -- offset by a factor  of 1/100 within the system (FYI this gets 
-  -- corrected when a user observes these in the GUI) Currencies w/ 
-  -- decimals are unimpacted.
-  --
-  -- Example of impacted currencies JPY, IDR, KRW, TWD 
-  -- Example of non-impacted currencies USD, GBP, EUR
-  -- Example 1,000 JPY will appear as 10.00 JPY
-  SELECT DISTINCT
-    CURRKEY,
-    CAST(POWER(10, 2 - COALESCE(CURRDEC, 0)) AS NUMERIC) AS CURRFIX
-  FROM
-    `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.tcurx`
-)
-
 SELECT
   likp.MANDT AS Client_MANDT,
   likp.VBELN AS Delivery_VBELN,
@@ -485,28 +468,59 @@ SELECT
   lips.WRF_CHARSTC1 AS CharacteristicValue1_WRF_CHARSTC1,
   lips.WRF_CHARSTC2 AS CharacteristicValue2_WRF_CHARSTC2,
   lips.WRF_CHARSTC3 AS CharacteristicValue3_WRF_CHARSTC3,
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_LFDAT.CalYear AS YearOfDeliveryDate_LFDAT,
+  CalendarDateDimension_LFDAT.CalMonth AS MonthOfDeliveryDate_LFDAT,
+  CalendarDateDimension_LFDAT.CalWeek AS WeekOfDeliveryDate_LFDAT,
+  CalendarDateDimension_LFDAT.DayOfMonth AS DayOfDeliveryDate_LFDAT,
+  CalendarDateDimension_LFDAT.CalQuarter AS QuarterOfDeliveryDate_LFDAT,
+  CalendarDateDimension_PODAT.CalYear AS YearOfProofOfDeliveryDate_PODAT,
+  CalendarDateDimension_PODAT.CalMonth AS MonthOfProofOfDeliveryDate_PODAT,
+  CalendarDateDimension_PODAT.CalWeek AS WeekOfProofOfDeliveryDate_PODAT,
+  CalendarDateDimension_PODAT.DayOfMonth AS DayOfProofOfDeliveryDate_PODAT,
+  CalendarDateDimension_PODAT.CalQuarter AS QuarterOfProofOfDeliveryDate_PODAT,
+  -- ##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
+  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
+  -- currency_conversion.conv_date AS Conversion_date,
+  -- IF(
+  --   likp.VBTYP IN ('H', 'K', 'N', 'O', 'T', '6'),
+  --   likp.NETWR * currency_conversion.UKURS * -1,
+  --   likp.NETWR * currency_conversion.UKURS
+  -- ) AS NetValueOfTheSalesOrderInTargetCurrency_NETWR,
+  -- lips.WAVWR * currency_conversion.UKURS AS CostInTargetCurrency_WAVWR,
+  -- lips.NETWR * currency_conversion.UKURS AS NetValueInTargetCurrency_NETWR,
+  -- lips.LFIMG * lips.NETPR * currency_conversion.UKURS AS DeliveredNetValueInTargetCurrency,
   IF(
     likp.VBTYP IN ('H', 'K', 'N', 'O', 'T', '6'),
-    COALESCE(likp.NETWR * TCURX_WAERK.CURRFIX * -1, likp.NETWR * -1),
-    COALESCE(likp.NETWR * TCURX_WAERK.CURRFIX, likp.NETWR)
+    COALESCE(likp.NETWR * currency_decimal.CURRFIX * -1, likp.NETWR * -1),
+    COALESCE(likp.NETWR * currency_decimal.CURRFIX, likp.NETWR)
   ) AS NetValueOfTheSalesOrderInDocumentCurrency_NETWR,
-  EXTRACT(YEAR FROM likp.LFDAT) AS YearOfDeliveryDate_LFDAT,
-  EXTRACT(MONTH FROM likp.LFDAT) AS MonthOfDeliveryDate_LFDAT,
-  EXTRACT(WEEK FROM likp.LFDAT) AS WeekOfDeliveryDate_LFDAT,
-  EXTRACT(DAY FROM likp.LFDAT) AS DayOfDeliveryDate_LFDAT,
   IF(lips.SHKZG IN ('B', 'S', 'X'), (lips.NTGEW * -1), lips.NTGEW ) AS NetWeight_NTGEW,
   IF(lips.SHKZG IN ('B', 'S', 'X'), (lips.BRGEW * -1), lips.BRGEW) AS GrossWeight_BRGEW,
   IF(lips.SHKZG IN ('B', 'S', 'X'), (lips.VOLUM * -1), lips.VOLUM) AS Volume_VOLUM,
-  COALESCE(lips.WAVWR * TCURX_WAERK.CURRFIX, lips.WAVWR) AS CostInDocumentCurrency_WAVWR,
-  COALESCE(lips.NETWR * TCURX_WAERK.CURRFIX, lips.NETWR) AS NetValueInDocumentCurrency_NETWR,
+  COALESCE(lips.WAVWR * currency_decimal.CURRFIX, lips.WAVWR) AS CostInDocumentCurrency_WAVWR,
+  COALESCE(lips.NETWR * currency_decimal.CURRFIX, lips.NETWR) AS NetValueInDocumentCurrency_NETWR,
   DATE_DIFF(likp.WADAT, likp.WADAT_IST, DAY) AS Delivery_Delay,
-  (lips.LFIMG * lips.NETPR) AS DeliveredNetValue,
+  lips.LFIMG * lips.NETPR AS DeliveredNetValue,
   IF(likp.VBTYP IN ('H', 'K', 'N', 'O', 'T', '6') OR lips.SHKZG IN ('B', 'S', 'X'), 'X', '') AS IS_RETURN
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.lips` AS lips
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.likp` AS likp
   ON
     likp.VBELN = lips.VBELN
     AND likp.MANDT = lips.MANDT
-LEFT JOIN TCURX AS TCURX_WAERK
-  ON
-    likp.WAERK = TCURX_WAERK.CURRKEY
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+  ON likp.WAERK = currency_decimal.CURRKEY
+-- ##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+-- LEFT JOIN
+--   `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+--   ON likp.MANDT = currency_conversion.MANDT
+--     AND likp.WAERK = currency_conversion.FCURR
+--     AND likp.LFDAT = currency_conversion.conv_date
+--     AND currency_conversion.TCURR {{ currency }}
+-- ##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+--     AND currency_conversion.KURST = 'M'
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_LFDAT
+  ON CalendarDateDimension_LFDAT.Date = likp.LFDAT
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_PODAT
+  ON CalendarDateDimension_PODAT.Date = LIKP.PODAT

@@ -1,3 +1,4 @@
+---SOURCE_SYS to avoid duplicates while using sql_flavour as UNION will be added later in this view
 SELECT
   vbak.MANDT AS Client_MANDT,
   vbak.VBELN AS SalesDocument_VBELN,
@@ -302,23 +303,33 @@ SELECT
   vbap.FONDS AS Fund_FONDS,
   vbap.FISTL AS FundsCenter_FISTL,
   vbap.FKBER AS FunctionalArea_FKBER,
-  currency_conversion.TCURR AS TargetCurrency_TCURR,
+  --##CORTEX-CUSTOMER Consider adding other dimensions from the calendar_date_dim table as per your requirement
+  CalendarDateDimension_ERDAT.CalYear AS YearOfSalesOrderCreationDate_ERDAT,
+  CalendarDateDimension_ERDAT.CalMonth AS MonthOfSalesOrderCreationDate_ERDAT,
+  CalendarDateDimension_ERDAT.CalWeek AS WeekOfSalesOrderCreationDate_ERDAT,
+  CalendarDateDimension_ERDAT.DayOfMonth AS DayOfSalesOrderCreationDate_ERDAT,
+  CalendarDateDimension_ERDAT.CalQuarter AS QuarterOfSalesOrderCreationDate_ERDAT,
+  CalendarDateDimension_VDATU.CalYear AS YearOfRequestedDeliveryDate_VDATU,
+  CalendarDateDimension_VDATU.CalMonth AS MonthOfRequestedDeliveryDate_VDATU,
+  CalendarDateDimension_VDATU.CalWeek AS WeekOfRequestedDeliveryDate_VDATU,
+  CalendarDateDimension_VDATU.DayOfMonth AS DayOfRequestedDeliveryDate_VDATU,
+  CalendarDateDimension_VDATU.CalQuarter AS QuarterOfRequestedDeliveryDate_VDATU,
+  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- currency_conversion.UKURS AS ExchangeRateTargetCurrency_UKURS,
+  -- currency_conversion.conv_date AS Conversion_date,
+  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
+  -- vbap.NETPR * currency_conversion.UKURS AS NetPriceTargetCurrency_NETPR,
+  -- vbak.NETWR * currency_conversion.UKURS AS NetValueOfTheSalesOrderInTargetCurrency_NETWR,
+  -- vbap.WAVWR * currency_conversion.UKURS AS CostInTargetCurrency_WAVWR,
+  -- vbap.MWSBP * currency_conversion.UKURS AS TaxAmountInTargetCurrency_MWSBP,
+  ---- Sales Order Value at item level in Target Currency
+  -- (vbap.NETPR * currency_conversion.UKURS * vbap.KWMENG) AS SalesOrderValueLineItemTargetCurrency,
   COALESCE(vbap.NETPR * tcurx_vbap.CURRFIX, vbap.NETPR) AS NetPrice_NETPR,
-  COALESCE(vbap.NETPR * tcurx_vbap.CURRFIX, vbap.NETPR) * currency_conversion.UKURS AS NetPriceTargetCurrency_NETPR,
   COALESCE(vbak.NETWR * tcurx_vbak.CURRFIX, vbak.NETWR) AS NetValueOfTheSalesOrderInDocumentCurrency_NETWR,
-  COALESCE(vbak.NETWR * tcurx_vbak.CURRFIX, vbak.NETWR) * currency_conversion.UKURS AS NetValueOfTheSalesOrderInTargetCurrency_NETWR,
   COALESCE(vbap.WAVWR * tcurx_vbap.CURRFIX, vbap.WAVWR) AS CostInDocumentCurrency_WAVWR,
-  COALESCE(vbap.WAVWR * tcurx_vbap.CURRFIX, vbap.WAVWR) * currency_conversion.UKURS AS CostInTargetCurrency_WAVWR,
   COALESCE(vbap.MWSBP * tcurx_vbap.CURRFIX, vbap.MWSBP) AS TaxAmountInDocumentCurrency_MWSBP,
-  COALESCE(vbap.MWSBP * tcurx_vbap.CURRFIX, vbap.MWSBP) * currency_conversion.UKURS AS TaxAmountInTargetCurrency_MWSBP,
-  EXTRACT(YEAR FROM vbak.ERDAT) AS YearOfSalesOrderCreationDate_ERDAT,
-  EXTRACT(MONTH FROM vbak.ERDAT) AS MonthOfSalesOrderCreationDate_ERDAT,
-  EXTRACT(WEEK FROM vbak.ERDAT) AS WeekOfSalesOrderCreationDate_ERDAT,
-  EXTRACT(DAY FROM vbak.ERDAT) AS DayOfSalesOrderCreationDate_ERDAT,
-  --- Sales Order Value at item level
-  (COALESCE(vbap.NETPR * tcurx_vbap.CURRFIX, vbap.NETPR) * vbap.KWMENG) AS SalesOrderValueLineItemSourceCurrency,
-  (COALESCE(vbap.NETPR * tcurx_vbap.CURRFIX, vbap.NETPR) * currency_conversion.UKURS * vbap.KWMENG) AS SalesOrderValueLineItemTargetCurrency
-
+  ---- Sales Order Value at item level in Source Currency
+  COALESCE(vbap.NETPR * tcurx_vbap.CURRFIX, vbap.NETPR) * vbap.KWMENG AS SalesOrderValueLineItemSourceCurrency
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbak` AS vbak
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbap` AS vbap
   ON vbak.VBELN = vbap.VBELN
@@ -327,10 +338,15 @@ LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal`
   ON vbak.WAERK = tcurx_vbak.CURRKEY
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS tcurx_vbap
   ON vbap.WAERK = tcurx_vbap.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
-  ON vbak.MANDT = currency_conversion.MANDT
-    AND vbak.WAERK = currency_conversion.FCURR
-    AND vbak.ERDAT BETWEEN currency_conversion.start_date AND currency_conversion.end_date
-    AND currency_conversion.TCURR {{ currency }}
-    --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
-    AND currency_conversion.KURST = 'M'
+--##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+-- LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--   ON vbak.MANDT = currency_conversion.MANDT
+--     AND vbak.WAERK = currency_conversion.FCURR
+--     AND vbak.ERDAT = currency_conversion.conv_date
+--     AND currency_conversion.TCURR {{ currency }}
+--##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+--     AND currency_conversion.KURST = 'M'
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_ERDAT
+  ON CalendarDateDimension_ERDAT.Date = vbak.ERDAT
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_VDATU
+  ON CalendarDateDimension_VDATU.Date = vbak.VDATU

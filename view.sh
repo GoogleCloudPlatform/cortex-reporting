@@ -196,4 +196,19 @@ cat view.json
 echo "---Creating View: --- "
 query=$(jinja -d view.json -f json "${sql_file}")
 echo "${query}"
-bq query --batch --location="${location}" --use_legacy_sql=false "${query}"
+
+set +e
+BQ_STR=$(bq query --batch --location="${location}" --use_legacy_sql=false "${query}" 2>&1)
+ERR_CODE=$?
+
+if [[ ${ERR_CODE} -ne 0 && "${BQ_STR}" == *"Retrying may solve the problem"* ]]
+then
+  echo "⚠️ Error encountered during BigQuery job execution (${ERR_CODE}). Retrying..."
+  sleep 5s
+  bq query --batch --location="${location}" --use_legacy_sql=false "${query}"
+  ERR_CODE=$?
+else
+  echo "${BQ_STR}"
+fi
+
+exit $ERR_CODE

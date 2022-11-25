@@ -11,8 +11,8 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-#-- ## EXPERIMENTAL
 
+-- noqa: PRS
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialsMovement`
 OPTIONS(
 description = "Material Movements"
@@ -29,3 +29,4 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/MaterialsMovement.sql' -%}
 {% endif -%}
+;

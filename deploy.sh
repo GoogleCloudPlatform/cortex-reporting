@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -181,7 +180,7 @@ validate() {
 
   if [[ -z "${DS_MODELS}" ]]; then
     echo 'INFO: "target-models-dataset" missing, defaulting to ML_MODELS.'
-    DS_MODELS=="ML_MODELS"
+    DS_MODELS="ML_MODELS"
   fi
 
   if [[ -z "${LOCATION}" ]]; then
@@ -402,24 +401,69 @@ echo -e "🦄🦄🦄 Generating views deployment 🔪🔪🔪"
 
 if [[ "${TURBO}" == true ]]; then
 
-  rm -f cloudbuild.views.yaml
-  cat cloudbuild.views.start.yaml >> cloudbuild.views.yaml
+  no_wait="waitFor: ['-']"
+  step_counter=0
+  build_file_counter=0
+
+  rm -f cloudbuild.views-*.yaml
 
   while read -r file_entry; do
-    echo "Adding ${file_entry}"
-    cat cloudbuild.views.step.yaml | sed "s/_SQL_FILE_NAME_HERE_/${file_entry}/g" >> cloudbuild.views.yaml
+    # if delimiter
+    if [[ "${file_entry}" == *"----"* || -z "${file_entry}"  ]]
+    then
+      no_wait=" "
+      continue
+    fi
+
+    build_file_number=$(printf "%02d" ${build_file_counter})
+    build_file_name="cloudbuild.views-${build_file_number}.yaml"
+
+    if [[ "${step_counter}" == "0" ]]
+    then
+      cat cloudbuild.views.start.yaml >> "${build_file_name}"
+    fi
+
+    cat cloudbuild.views.step.yaml | \
+      sed "s/_SQL_FILE_NAME_HERE_/${file_entry}/g" | \
+      sed "s/_NO_WAIT_HERE_/${no_wait}/g" >> "${build_file_name}"
+
+    step_counter=$((step_counter+1))
+
+    if [[ "${step_counter}" == "99" ]]
+    then
+      cat cloudbuild.views.end.yaml >> "${build_file_name}"
+      step_counter=0
+      build_file_counter=$((build_file_counter+1))
+    fi
+
   done <"dependencies_${SQL_FLAVOUR}.txt"
 
-  cat cloudbuild.views.end.yaml >> cloudbuild.views.yaml
-
-  echo -e "🦄🦄🦄 Executing views deployment in TURBO mode 😺😺😺"
-  gcloud builds submit . --config=./cloudbuild.views.yaml --substitutions=_LOCATION="${LOCATION}",_SQL_FLAVOUR="${SQL_FLAVOUR}"
-
-  if [ $? = 1 ]; then
-    success=1
+  if [[ "${step_counter}" != "0" ]]
+  then
+    cat cloudbuild.views.end.yaml >> "${build_file_name}"
   fi
+
+  echo -e "\n🦄🦄🦄 Executing views deployment in TURBO💨 mode 😺😺😺"
+
+  for phase in $( seq 0 $build_file_counter )
+  do
+    build_file_number=$(printf "%02d" ${phase})
+    build_file_name="cloudbuild.views-${build_file_number}.yaml"
+    if [[ -f "${build_file_name}" ]]
+    then
+      echo -e "\nRunning build ${build_file_name}..."
+      gcloud builds submit . --config="${build_file_name}" --substitutions=_LOCATION="${LOCATION}",_SQL_FLAVOUR="${SQL_FLAVOUR}"
+      if [ $? = 1 ]; then
+        success=1
+      fi
+    fi
+  done
 else
   while read -r file_entry; do
+    # if delimiter or empty lines
+    if [[ "${file_entry}" == *"----"* || -z "${file_entry}"  ]]; then
+      continue
+    fi
     echo "Creating ${file_entry} in sequential mode 😺😺😺"
     gcloud builds submit . --config=./cloudbuild.view.yaml --substitutions=_LOCATION="${LOCATION}",_SQL_FLAVOUR="${SQL_FLAVOUR}",_SQL_FILE="${file_entry}"
     # Substitutions replaced by config.json file
