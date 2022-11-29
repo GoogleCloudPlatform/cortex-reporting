@@ -78,7 +78,7 @@ LEFT JOIN
     SalesOrders.Client_MANDT = CountriesMD.Client_MANDT
     AND CustomersMD.CountryKey_LAND1 = CountriesMD.CountryKey_LAND1
     AND CountriesMD.Language_SPRAS = MaterialsMD.Language_SPRAS
-LEFT JOIN `{{ project_id_tgt }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
   ON SalesOrders.Client_MANDT = currency_conversion.MANDT
     AND SalesOrders.CurrencyHdr_WAERK = currency_conversion.FCURR
     AND SalesOrders.DocumentDate_AUDAT = currency_conversion.conv_date
