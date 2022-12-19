@@ -12,7 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
--- noqa: PRS
 CREATE OR REPLACE TABLE `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialMovementTypesMD`
 OPTIONS(
 description = "Material Movement Types"
@@ -30,3 +29,4 @@ UNION ALL
 {% include './s4/MaterialMovementTypesMD.sql' -%}
 {% endif -%}
 ;
+

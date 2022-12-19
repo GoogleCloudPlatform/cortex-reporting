@@ -27,7 +27,6 @@ Regions_T005S.sql
 SDDocumentFlow.sql
 UoMConversion.sql
 UoMConversionUtil.sql
-SDStatus_Items.sql
 ProductHierarchiesMD.sql
 CustomersMD.sql
 Languages_T002.sql
@@ -40,7 +39,6 @@ ProfitCentersMD.sql
 ProductionOrders.sql
 CountriesMD.sql
 UoMMD.sql
-UoMUsage_SAMPLE.sql
 PurchaseDocuments_Flow.sql
 DivisionsMD.sql
 HolidayCalendar.sql
@@ -56,6 +54,7 @@ PurchasingOrganizationsMD.sql
 BatchesMD.sql
 MaterialPlantsMD.sql
 PurchasingGroupsMD.sql
+PricingConditions.sql
 ------------ Files above this line executed simultaneously ------------
 PurchaseDocuments.sql
 InvoiceDocuments_Flow.sql
@@ -65,7 +64,7 @@ DueDateForCashDiscount1.sql
 DueDateForCashDiscount2.sql
 BusinessPartnersMD.sql
 AccountingDocuments.sql
-AccountingDocumentsReceivables.sql
+AccountingDocumentsReceivable.sql
 POVendorConfirmation.sql
 POOrderHistory.sql
 Deliveries.sql
@@ -83,11 +82,17 @@ Stock_Unrestricted_vs_Sales.sql
 UoMUsage_SAMPLE.sql
 ProfitCenterAmountsHierarchy_SAMPLE.sql
 CostCenterAmountsHierarchy_SAMPLE.sql
-SalesOrderDetails_SAMPLE.sql
 OneTouchOrder.sql
 Billing.sql
-DivisionsMD.sql
 OrderToCash.sql
 SalesOrderHeaderStatus.sql
 SalesOrderScheduleLine.sql
 SalesOrderPartnerFunction.sql
+VendorConfig.sql
+VendorPerformance.sql
+AccountsPayable.sql
+AccountsPayableTurnover.sql
+CashDiscountUtilization.sql
+CurrencyConversion.sql
+SalesOrderDetails_SAMPLE.sql
+SalesOrderPricing.sql

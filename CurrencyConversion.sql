@@ -12,18 +12,20 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
--- noqa: PRS
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountingDocumentsReceivables`
+CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CurrencyConversion`
 OPTIONS(
-description = " AR Accounting Documents Reporting "
+description = "Exchange Rate for Currency Conversion"
 )
 AS
-{% if sql_flavour == 'ecc' -%}
-{% include './ecc/AccountingDocumentsReceivables.sql' -%}
+{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
+{% include './ecc/CurrencyConversion.sql' -%}
 {% endif -%}
 
+{% if sql_flavour == 'union' -%}
+UNION ALL
+{% endif -%}
 
-{% if sql_flavour == 's4' -%}
-{% include './s4/AccountingDocumentsReceivables.sql' -%}
+{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
+{% include './s4/CurrencyConversion.sql' -%}
 {% endif -%}
 ;

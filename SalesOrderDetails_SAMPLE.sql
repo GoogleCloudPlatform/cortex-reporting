@@ -28,4 +28,3 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/SalesOrderDetails_SAMPLE.sql' -%}
 {% endif -%}
-

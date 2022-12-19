@@ -891,7 +891,7 @@
     ON BKPF.HWAE3 = TCURXHWAE3.CURRKEY
   LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS TCURXPSWSL
     ON BSEG.PSWSL = TCURXPSWSL.CURRKEY
-  --## CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
   --## Consider applying currency conversion on other currency keys as per your requirement
   -- LEFT JOIN
   --   `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion

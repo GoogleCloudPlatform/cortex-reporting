@@ -21,7 +21,6 @@ SalesOrganizationsMD.sql
 StorageLocationsMD.sql
 ValuationAreasMD.sql
 SalesOrders.sql
-SalesOrders_V2.sql
 Regions_T005S.sql
 SDDocumentFlow.sql
 UoMConversion.sql
@@ -55,6 +54,7 @@ PurchasingOrganizationsMD.sql
 BatchesMD.sql
 MaterialPlantsMD.sql
 PurchasingGroupsMD.sql
+PricingConditions.sql
 ------------ Files above this line executed simultaneously ------------
 PurchaseDocuments.sql
 InvoiceDocuments_Flow.sql
@@ -68,7 +68,7 @@ DueDateForCashDiscount1.sql
 DueDateForCashDiscount2.sql
 BusinessPartnersMD.sql
 AccountingDocuments.sql
-AccountingDocumentsReceivables.sql
+AccountingDocumentsReceivable.sql
 POVendorConfirmation.sql
 POOrderHistory.sql
 DeliveriesStatus_PerSalesOrg.sql
@@ -83,9 +83,16 @@ Stock_Unrestricted_vs_Sales.sql
 UoMUsage_SAMPLE.sql
 ProfitCenterAmountsHierarchy_SAMPLE.sql
 CostCenterAmountsHierarchy_SAMPLE.sql
-SalesOrderDetails_SAMPLE.sql
 OneTouchOrder.sql
 OrderToCash.sql
 SalesOrderHeaderStatus.sql
 SalesOrderPartnerFunction.sql
 SalesOrderScheduleLine.sql
+VendorConfig.sql
+VendorPerformance.sql
+AccountsPayable.sql
+AccountsPayableTurnover.sql
+CashDiscountUtilization.sql
+CurrencyConversion.sql
+SalesOrderDetails_SAMPLE.sql
+SalesOrderPricing.sql

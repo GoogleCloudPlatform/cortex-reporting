@@ -12,7 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
--- noqa: PRS
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CurrencyConvUtil`
 OPTIONS(
 description = "Utility View for Currency Conversion (materialized recommended)"
@@ -30,3 +29,4 @@ UNION ALL
 ({% include './s4/CurrencyConvUtil.sql' -%})
 {% endif -%}
 ;
+

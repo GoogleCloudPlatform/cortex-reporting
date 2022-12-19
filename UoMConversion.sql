@@ -1,4 +1,3 @@
-#-- noqa: disable=all
 #-- Copyright 2022 Google LLC
 #--
 #-- Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,3 +28,4 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/UoMConversion.sql' -%}
 {% endif -%}
+

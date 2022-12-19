@@ -12,9 +12,8 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
--- noqa: PRS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
-CREATE TABLE IF NOT EXISTS `{{ project_id_src  }}.{{ dataset_cdc_processed_ecc }}.holiday_calendar`(
+CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.holiday_calendar`(
     HolidayDate	STRING,
     Description	STRING,
     CountryCode	STRING,
@@ -26,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `{{ project_id_src  }}.{{ dataset_cdc_processed_ecc }
 {% endif -%}
 
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
-CREATE TABLE IF NOT EXISTS `{{ project_id_src  }}.{{ dataset_cdc_processed_s4 }}.holiday_calendar` (
+CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.holiday_calendar` (
     HolidayDate	STRING,
     Description	STRING,
     CountryCode	STRING,
@@ -55,5 +54,7 @@ UNION ALL
 
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 ({% include './s4/HolidayCalendar.sql' -%})
+{% endif -%}
+{% if sql_flavour == 's4' -%}
 ;
 {% endif -%}

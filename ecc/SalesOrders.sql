@@ -1,11 +1,11 @@
 WITH TCURX AS (
-  -- Joining to this table is necesssary to fix the decimal place of
-  -- amounts for non-decimal-bASed currencies. SAP stores these amounts
-  -- offset by a factor  of 1/100 within the system (FYI this gets
-  -- corrected when a user observes these in the GUI) Currencies w/
+  -- Joining to this table is necesssary to fix the decimal place of 
+  -- amounts for non-decimal-bASed currencies. SAP stores these amounts 
+  -- offset by a factor  of 1/100 within the system (FYI this gets 
+  -- corrected when a user observes these in the GUI) Currencies w/ 
   -- decimals are unimpacted.
   --
-  -- Example of impacted currencies JPY, IDR, KRW, TWD
+  -- Example of impacted currencies JPY, IDR, KRW, TWD 
   -- Example of non-impacted currencies USD, GBP, EUR
   -- Example 1,000 JPY will appear AS 10.00 JPY
   SELECT DISTINCT
@@ -427,7 +427,7 @@ SELECT
   AGGKONV.InterCompanyPrice,
   AGGKONV.Discount,
   AGGVBEP.ConfirmedOrderQuantity_BMENG,
-  -- Sales Order Value at item level
+  -- Sales Order Value at item level 
   COALESCE(
     VBAK.NETWR * TCURX_VBAK.CURRFIX, VBAK.NETWR
   ) AS NetValueOfTheSalesOrderInDocumentCurrency_NETWR,

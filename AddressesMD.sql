@@ -11,7 +11,7 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
--- noqa: PRS
+
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AddressesMD`
 OPTIONS(
   description = "Addresses Master Data"
@@ -29,3 +29,4 @@ UNION ALL
 {% include './s4/AddressesMD.sql' -%}
 {% endif -%}
 ;
+

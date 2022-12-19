@@ -6,7 +6,7 @@ SELECT DISTINCT
   SalesOrganizationsMD.SalesOrgName_VTEXT AS SalesOrganization,
   DivisionsMD.DivisionName_VTEXT AS Division,
   MaterialsMD.MaterialText_MAKTX AS Product,
-  currency_conversion.TCURR AS TargetCurrency,
+  CurrencyConversion.ToCurrency_TCURR AS TargetCurrency,
   /** End of filter dimensions **/
   CustomersMD.Name1_NAME1 AS Customer,
   SalesOrders.SalesDocument_VBELN AS SalesOrder,
@@ -18,8 +18,8 @@ SELECT DISTINCT
   SalesOrders.NetValueOfTheSalesOrderInDocumentCurrency_NETWR AS SalesOrderNetValueLocalCurrency,
   SalesOrders.CumulativeOrderQuantity_KWMENG AS SalesOrderQty,
   SalesOrders.SalesOrderValueLineItemSourceCurrency AS SalesOrderValueLocalCurrency,
-  SalesOrders.NetValueOfTheSalesOrderInDocumentCurrency_NETWR * currency_conversion.UKURS AS SalesOrderNetValueTargetCurrency,
-  SalesOrders.SalesOrderValueLineItemSourceCurrency * currency_conversion.UKURS AS SalesOrderValueTargetCurrency,
+  SalesOrders.NetValueOfTheSalesOrderInDocumentCurrency_NETWR * CurrencyConversion.ExchangeRate_UKURS AS SalesOrderNetValueTargetCurrency,
+  SalesOrders.SalesOrderValueLineItemSourceCurrency * CurrencyConversion.ExchangeRate_UKURS AS SalesOrderValueTargetCurrency,
   IF(SalesOrders.RejectionReason_ABGRU IS NOT NULL,
      'Canceled',
      IF(Deliveries.ActualQuantityDelivered_InSalesUnits_LFIMG = SalesOrders.CumulativeOrderQuantity_KWMENG
@@ -29,7 +29,7 @@ SELECT DISTINCT
   (Deliveries.DeliveryBlock_documentHeader_LIFSK IS NOT NULL
     OR Deliveries.BillingBlockInSdDocument_FAKSK IS NOT NULL) AS IsOrderBlocked,
   SalesOrders.DocumentCategory_VBTYP = 'C' AS IsIncomingOrder,
-  SAFE_DIVIDE(1, currency_conversion.UKURS) AS ExchangeRate
+  SAFE_DIVIDE(1, CurrencyConversion.ExchangeRate_UKURS) AS ExchangeRate
 
 FROM
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SalesOrders_V2` AS SalesOrders
@@ -78,14 +78,14 @@ LEFT JOIN
     SalesOrders.Client_MANDT = CountriesMD.Client_MANDT
     AND CustomersMD.CountryKey_LAND1 = CountriesMD.CountryKey_LAND1
     AND CountriesMD.Language_SPRAS = MaterialsMD.Language_SPRAS
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
-  ON SalesOrders.Client_MANDT = currency_conversion.MANDT
-    AND SalesOrders.CurrencyHdr_WAERK = currency_conversion.FCURR
-    AND SalesOrders.DocumentDate_AUDAT = currency_conversion.conv_date
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CurrencyConversion` AS CurrencyConversion
+  ON SalesOrders.Client_MANDT = CurrencyConversion.Client_MANDT
+    AND SalesOrders.CurrencyHdr_WAERK = CurrencyConversion.FromCurrency_FCURR
+    AND SalesOrders.DocumentDate_AUDAT = CurrencyConversion.ConvDate
     ##CORTEX-CUSTOMER Modify target currency based on your requirement
-    AND currency_conversion.TCURR = 'USD'
+    AND CurrencyConversion.ToCurrency_TCURR {{ currency }}
     ##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
-    AND currency_conversion.KURST = 'M'
+    AND CurrencyConversion.ExchangeRateType_KURST = 'M'
 ##CORTEX-CUSTOMER Modify the below baseline filters based on requirement
 WHERE
   ( SalesOrders.Client_MANDT = '{{ mandt }}'

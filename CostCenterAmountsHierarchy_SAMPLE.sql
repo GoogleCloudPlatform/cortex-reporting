@@ -11,7 +11,7 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
--- noqa: PRS
+
 {% if sql_flavour == 'ecc' -%}
  CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.csks_hier` (
   mandt STRING,
@@ -47,3 +47,4 @@ AS
 ({% include './s4/CostCenterAmountsHierarchy_SAMPLE.sql' -%})
 {% endif -%}
 ;
+

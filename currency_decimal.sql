@@ -15,7 +15,7 @@
 
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 
-CREATE OR REPLACE TABLE `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS (
+CREATE OR REPLACE TABLE `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal`AS (
   SELECT DISTINCT
     tcurx.CURRKEY,
     CAST(POWER(10, 2 - COALESCE(tcurx.CURRDEC, 0)) AS NUMERIC) AS CURRFIX
@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Cur
 {% endif -%}
 
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
-CREATE OR REPLACE TABLE `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS (
+CREATE OR REPLACE TABLE `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal`AS (
   SELECT DISTINCT
     tcurx.CURRKEY,
     CAST(POWER(10, 2 - COALESCE(tcurx.CURRDEC, 0)) AS NUMERIC) AS CURRFIX

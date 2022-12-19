@@ -12,7 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
--- noqa: PRS
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CustomerClearedItems`
 OPTIONS(
 description = "Customer cleared financial items (a.k.a BSAD table)"
@@ -30,3 +29,4 @@ UNION ALL
 ({% include './s4/CustomerClearedItems_BSAD.sql' -%})
 {% endif -%}
 ;
+

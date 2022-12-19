@@ -535,6 +535,7 @@ SELECT
   -- RSEG_RBCO.bnkan_fw * currency_conversion.UKURS AS DeliveryCostsDistributionAmountInTargetCurrency_BNKAN_FW,
   -- RSEG_RBCO.fwbas * currency_conversion.UKURS AS TaxBaseAmountInTargetCurrency_FWBAS,
   -- RSEG_RBCO.wrbtr * currency_conversion.UKURS AS AmountInTargetCurrency_WRBTR,
+  -- RBKP.rmwwr * currency_conversion.UKURS AS GrossInvoiceAmountInTargetCurrency_RMWWR,
   PRPS.posid AS WbsElement_POSID,
   COALESCE(RBKP.bukrs, RSEG_RBCO.bukrs) AS CompanyCode_BUKRS,
   COALESCE(RBKP.gsber, RSEG_RBCO.gsber) AS BusinessArea_GSBER,
