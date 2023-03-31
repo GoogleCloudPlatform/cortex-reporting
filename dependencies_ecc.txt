@@ -1,5 +1,6 @@
 CalendarDateDim.sql
 NetDueDateCalc.sql
+CurrencyConversion.sql
 fiscal_period.sql
 fiscal_case1.sql
 fiscal_case2.sql
@@ -47,7 +48,7 @@ Weather.sql
 WeatherDaily.sql
 StorageLocationsMD.sql
 PurchaseDocumentTypesMD.sql
-MovementTypesMD.sql
+MaterialMovementTypesMD.sql
 ReasonForMovementTypesMD.sql
 SpecialStocksMD.sql
 PurchasingOrganizationsMD.sql
@@ -55,8 +56,16 @@ BatchesMD.sql
 MaterialPlantsMD.sql
 PurchasingGroupsMD.sql
 PricingConditions.sql
+SalesOrderStatus.sql
+POScheduleLine.sql
+MaterialsBatchMD.sql
+StockCharacteristicsConfig.sql
+SlowMovingThreshold.sql
+StockInHand.sql
+OneTouchOrder.sql
 ------------ Files above this line executed simultaneously ------------
 PurchaseDocuments.sql
+PurchaseDocumentsHistory.sql
 InvoiceDocuments_Flow.sql
 MaterialsValuation.sql
 MaterialsMovement.sql
@@ -83,16 +92,12 @@ Stock_Unrestricted_vs_Sales.sql
 UoMUsage_SAMPLE.sql
 ProfitCenterAmountsHierarchy_SAMPLE.sql
 CostCenterAmountsHierarchy_SAMPLE.sql
-OneTouchOrder.sql
 OrderToCash.sql
 SalesOrderHeaderStatus.sql
 SalesOrderPartnerFunction.sql
 SalesOrderScheduleLine.sql
 VendorConfig.sql
-VendorPerformance.sql
-AccountsPayable.sql
-AccountsPayableTurnover.sql
-CashDiscountUtilization.sql
-CurrencyConversion.sql
-SalesOrderDetails_SAMPLE.sql
+MaterialLedger.sql
 SalesOrderPricing.sql
+StockWeeklySnapshots.sql
+StockMonthlySnapshots.sql

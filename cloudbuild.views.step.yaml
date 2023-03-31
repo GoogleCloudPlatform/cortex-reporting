@@ -1,5 +1,5 @@
 
-  - name: gcr.io/kittycorn-public/deploy-kittycorn:v1.5
+  - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
     _NO_WAIT_HERE_
     entrypoint: "bash"
     args:

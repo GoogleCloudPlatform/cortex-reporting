@@ -10,7 +10,9 @@ WITH AccountsPayable AS (
     AccountsPayable.PostingDateInTheDocument_BUDAT,
     AccountsPayable.AccountingDocumenttype_BLART,
     AccountsPayable.AmountInLocalCurrency_DMBTR,
+    AccountsPayable.AmountInTargetCurrency_DMBTR,
     AccountsPayable.CurrencyKey_WAERS,
+    AccountsPayable.TargetCurrency_TCURR,
     AccountsPayable.DocFiscPeriod,
 
     SUM(
@@ -28,8 +30,26 @@ WITH AccountsPayable AS (
         )
       )
     ) OVER (
-      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.DocFiscPeriod
-    ) AS TotalPurchases,
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR, AccountsPayable.DocFiscPeriod
+    ) AS TotalPurchasesInSourceCurrency,
+
+    SUM(
+      IF(
+        ## CORTEX-CUSTOMER: Please add relevant Movement Types.
+        -- Value '101' represents 'GR Goods Receipt' and '501' represents 'Receipt w/o PO'
+        AccountsPayable.AccountType_KOART = 'M' AND AccountsPayable.MovementType__inventoryManagement___BWART IN ('101', '501'),
+        AccountsPayable.POOrderHistory_AmountInTargetCurrency_DMBTR,
+        IF(
+          ## CORTEX-CUSTOMER: Please add relevant Movement Types.
+          -- Value '102' represents 'GR for PO reversal (full or any one of the line item)'
+          -- Value '502' represents 'Return Receipt w/o PO' (Receipt made against movement type 501 document is cancelled.)
+          AccountsPayable.AccountType_KOART = 'M' AND AccountsPayable.MovementType__inventoryManagement___BWART IN ('102', '502'),
+          AccountsPayable.POOrderHistory_AmountInTargetCurrency_DMBTR * -1, 0
+        )
+      )
+    ) OVER (
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR, AccountsPayable.DocFiscPeriod
+    ) AS TotalPurchasesInTargetCurrency,
 
     SUM(
       IF(
@@ -41,8 +61,21 @@ WITH AccountsPayable AS (
         0
       )
     ) OVER (
-      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.DocFiscPeriod
-    ) AS PeriodAP,
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR, AccountsPayable.DocFiscPeriod
+    ) AS PeriodAPInSourceCurrency,
+
+    SUM(
+      IF(
+        ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+        AccountsPayable.Accounttype_KOART = 'K'
+        ## CORTEX-CUSTOMER: Please add relevant Document Type. Value 'RE' represents 'Invoice - Gross'
+        AND AccountsPayable.InvoiceDocumenttype_BLART = 'RE',
+        AccountsPayable.AmountInTargetCurrency_DMBTR,
+        0
+      )
+    ) OVER (
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR, AccountsPayable.DocFiscPeriod
+    ) AS PeriodAPInTargetCurrency,
 
     SUM(
       IF(
@@ -56,8 +89,23 @@ WITH AccountsPayable AS (
         0
       )
     ) OVER (
-      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.DocFiscPeriod
-    ) AS UnpaidPeriodAP,
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR, AccountsPayable.DocFiscPeriod
+    ) AS UnpaidPeriodAPInSourceCurrency,
+
+    SUM(
+      IF(
+        ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+        AccountsPayable.Accounttype_KOART = 'K'
+        ## CORTEX-CUSTOMER: Please add relevant Document Type. Value 'RE' represents 'Invoice - Gross'
+        AND AccountsPayable.InvoiceDocumenttype_BLART = 'RE'
+        -- AND AccountsPayable.PostingDateInTheDocument_BUDAT <= AccountsPayable.DocFiscPeriodEndDate
+        AND AccountsPayable.ClearingDate_AUGDT IS NULL,
+        AccountsPayable.AmountInTargetCurrency_DMBTR,
+        0
+      )
+    ) OVER (
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR, AccountsPayable.DocFiscPeriod
+    ) AS UnpaidPeriodAPInTargetCurrency,
 
     SUM(
       IF(
@@ -70,12 +118,27 @@ WITH AccountsPayable AS (
         0
       )
     ) OVER (
-      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR
       ORDER BY AccountsPayable.DocFiscPeriod
-    ) AS ClosingAP
+    ) AS ClosingAPInSourceCurrency,
+
+    SUM(
+      IF(
+        ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+        AccountsPayable.Accounttype_KOART = 'K'
+        ## CORTEX-CUSTOMER: Please add relevant Document Type. Value 'RE' represents 'Invoice - Gross'
+        AND AccountsPayable.InvoiceDocumenttype_BLART = 'RE'
+        AND AccountsPayable.ClearingDate_AUGDT IS NULL,
+        AccountsPayable.AmountInTargetCurrency_DMBTR,
+        0
+      )
+    ) OVER (
+      PARTITION BY AccountsPayable.Client_MANDT, AccountsPayable.CompanyCode_BUKRS, AccountsPayable.TargetCurrency_TCURR
+      ORDER BY AccountsPayable.DocFiscPeriod
+    ) AS ClosingAPInTargetCurrency
 
   FROM
-    `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountsPayable`(KeyDate) AS AccountsPayable
+    `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountsPayable` AS AccountsPayable
   WHERE
     AccountsPayable.DocFiscPeriod <= AccountsPayable.KeyFiscPeriod
 )
@@ -91,19 +154,33 @@ SELECT
   AccountsPayable.PostingDateInTheDocument_BUDAT,
   AccountsPayable.AccountingDocumenttype_BLART,
   AccountsPayable.AmountInLocalCurrency_DMBTR,
+  AccountsPayable.AmountInTargetCurrency_DMBTR,
   AccountsPayable.CurrencyKey_WAERS,
+  AccountsPayable.TargetCurrency_TCURR,
   AccountsPayable.DocFiscPeriod,
 
-  COALESCE(AccountsPayable.TotalPurchases, 0) AS TotalPurchases,
-  COALESCE(AccountsPayable.ClosingAP, 0) - COALESCE(UnpaidPeriodAP, 0) AS OpeningAP,
-  COALESCE(AccountsPayable.PeriodAP, 0) AS PeriodAP,
-  COALESCE(AccountsPayable.ClosingAP, 0) - COALESCE(UnpaidPeriodAP, 0) + COALESCE(AccountsPayable.PeriodAP, 0) AS ClosingAP,
+  COALESCE(AccountsPayable.TotalPurchasesInSourceCurrency, 0) AS TotalPurchasesInSourceCurrency,
+  COALESCE(AccountsPayable.TotalPurchasesInTargetCurrency, 0) AS TotalPurchasesInTargetCurrency,
+  COALESCE(AccountsPayable.ClosingAPInSourceCurrency, 0) - COALESCE(UnpaidPeriodAPInSourceCurrency, 0) AS OpeningAPInSourceCurrency,
+  COALESCE(AccountsPayable.ClosingAPInTargetCurrency, 0) - COALESCE(UnpaidPeriodAPInTargetCurrency, 0) AS OpeningAPInTargetCurrency,
+  COALESCE(AccountsPayable.PeriodAPInSourceCurrency, 0) AS PeriodAPInSourceCurrency,
+  COALESCE(AccountsPayable.PeriodAPInTargetCurrency, 0) AS PeriodAPInTargetCurrency,
+  COALESCE(AccountsPayable.ClosingAPInSourceCurrency, 0) - COALESCE(UnpaidPeriodAPInSourceCurrency, 0) + COALESCE(AccountsPayable.PeriodAPInSourceCurrency, 0) AS ClosingAPInSourceCurrency,
+  COALESCE(AccountsPayable.ClosingAPInTargetCurrency, 0) - COALESCE(UnpaidPeriodAPInTargetCurrency, 0) + COALESCE(AccountsPayable.PeriodAPInTargetCurrency, 0) AS ClosingAPInTargetCurrency,
 
   SAFE_DIVIDE(
-    AccountsPayable.TotalPurchases,
+    AccountsPayable.TotalPurchasesInSourceCurrency,
     (
-      (COALESCE(AccountsPayable.ClosingAP, 0) - COALESCE(UnpaidPeriodAP, 0) + COALESCE(AccountsPayable.PeriodAP, 0)) * 2
-      - COALESCE(AccountsPayable.PeriodAP, 0)
+      (COALESCE(AccountsPayable.ClosingAPInSourceCurrency, 0) - COALESCE(UnpaidPeriodAPInSourceCurrency, 0) + COALESCE(AccountsPayable.PeriodAPInSourceCurrency, 0)) * 2
+      - COALESCE(AccountsPayable.PeriodAPInSourceCurrency, 0)
     ) / 2
-  ) AS AccountsPayableTurnover
+  ) AS AccountsPayableTurnoverInSourceCurrency,
+
+  SAFE_DIVIDE(
+    AccountsPayable.TotalPurchasesInTargetCurrency,
+    (
+      (COALESCE(AccountsPayable.ClosingAPInTargetCurrency, 0) - COALESCE(UnpaidPeriodAPInTargetCurrency, 0) + COALESCE(AccountsPayable.PeriodAPInTargetCurrency, 0)) * 2
+      - COALESCE(AccountsPayable.PeriodAPInTargetCurrency, 0)
+    ) / 2
+  ) AS AccountsPayableTurnoverInTargetCurrency
 FROM AccountsPayable

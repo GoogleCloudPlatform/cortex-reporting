@@ -1,4 +1,22 @@
 WITH
+  LanguageKey AS (
+    SELECT LanguageKey_SPRAS
+    FROM
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Languages_T002`
+    WHERE LanguageKey_SPRAS {{ language }}
+  ),
+
+  CurrencyConversion AS (
+    SELECT
+      Client_MANDT, FromCurrency_FCURR, ToCurrency_TCURR, ConvDate, ExchangeRate_UKURS
+    FROM
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CurrencyConversion`
+    WHERE
+      ToCurrency_TCURR {{ currency }}
+      --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+      AND ExchangeRateType_KURST = 'M'
+  ),
+
   -- Purchase Order Item level details
   PurchaseOrderScheduleLine AS (
     SELECT
@@ -12,10 +30,6 @@ WITH
       PurchaseOrders.POQuantity_MENGE,
       PurchaseOrders.UoM_MEINS,
       PurchaseOrders.NetPrice_NETPR,
-      --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-      --## uncomment currency_conversion in PurchaseDocuments
-      -- PurchaseOrders.NetPriceInTargetCurrency_NETPR,
-      -- PurchaseOrders.NetOrderValueInTargetCurrency_NETWR,
       PurchaseOrders.CreatedOn_AEDAT,
       PurchaseOrders.Status_STATU,
       PurchaseOrders.MaterialNumber_MATNR,
@@ -55,9 +69,9 @@ WITH
         PurchaseOrders.Client_MANDT = POScheduleLine.Client_MANDT
         AND PurchaseOrders.DocumentNumber_EBELN = POScheduleLine.PurchasingDocumentNumber_EBELN
         AND PurchaseOrders.Item_EBELP = POScheduleLine.ItemNumberOfPurchasingDocument_EBELP
-    --## DocumentType_BSART='NB' or 'ENB'->Standrad PO
+    --## DocumentType_BSART='NB' or 'ENB'-> Standrad PO
     --## ItemCategoryinPurchasingDocument_PSTYP ='2'-> Consignment PO
-    WHERE PurchaseOrders.DocumentType_BSART IN('NB', 'ENB')
+    WHERE PurchaseOrders.DocumentType_BSART IN ('NB', 'ENB')
       AND PurchaseOrders.ItemCategoryinPurchasingDocument_PSTYP != '2'
   ),
 
@@ -96,25 +110,22 @@ WITH
       PurchaseOrderScheduleLine.MonthOfPurchasingDocumentDate_BEDAT,
       PurchaseOrderScheduleLine.WeekOfPurchasingDocumentDate_BEDAT,
       POOrderHistory.AmountInLocalCurrency_DMBTR,
-      --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-      --## uncomment currency_conversion in POOrderHistory
-      -- POOrderHistory.AmountInTargetCurrency_DMBTR,
       POOrderHistory.CurrencyKey_WAERS AS POOrderHistoryCurrencyKey_WAERS,
-      --Actual Reciept Date
+      -- Actual Reciept Date
       IF(
         POOrderHistory.MovementType__inventoryManagement___BWART = '101',
         POOrderHistory.PostingDateInTheDocument_BUDAT,
         NULL) AS PostingDateInTheDocument_BUDAT,
 
-      --DeliveryStatus
+      -- DeliveryStatus
       -- TRUE stands for Delivered Orders and FALSE stands for NotDelivered Orders
       IF(
         PurchaseOrderScheduleLine.DeliveryCompletedFlag_ELIKZ IS NULL,
         FALSE,
         TRUE
-      ) AS DeliveredOrNotDelivered,
+      ) AS IsDelivered,
 
-      --Vendor Cycle Time in Days
+      -- Vendor Cycle Time in Days
       IF(
         PurchaseOrderScheduleLine.DeliveryCompletedFlag_ELIKZ = 'X',
         COALESCE(
@@ -131,20 +142,20 @@ WITH
           0),
         NULL) AS VendorCycleTimeInDays,
 
-      --Vendor Quality (Rejection)
-      -- FALSE stands for Rejected Orders and TRUE stands for NotRejected Orders
+      -- Vendor Quality (Rejection)
+      -- TRUE stands for Rejected Orders and FALSE stands for NotRejected Orders
       IF(
         POOrderHistory.MovementType__inventoryManagement___BWART IN ('122', '161'),
-        FALSE,
-        TRUE) AS VendorQuality,
-      --Rejected Quantity
+        TRUE,
+        FALSE) AS IsRejected,
+      -- Rejected Quantity
       IF(
         POOrderHistory.MovementType__inventoryManagement___BWART IN ('122', '161'),
         POOrderHistory.Quantity_MENGE,
         0) AS RejectedQuantity,
 
-      --Vendor On Time Delivery
-      --TRUE stands for NotDelayed Orders and False for Delayed Orders
+      -- Vendor On Time Delivery
+      -- TRUE stands for NotDelayed Orders and FALSE for Delayed Orders
       IF(
         PurchaseOrderScheduleLine.DeliveryCompletedFlag_ELIKZ = 'X',
         IF(
@@ -154,9 +165,9 @@ WITH
             NULL) <= PurchaseOrderScheduleLine.ItemDeliveryDate_EINDT,
           TRUE,
           FALSE),
-        NULL) AS VendorOnTimeDelivery,
+        NULL) AS IsDeliveredOnTime,
 
-      --Vendor InFull Delivery
+      -- Vendor InFull Delivery
       -- TRUE stands for DeliveredInFull Orders and FALSE stands for NotDeliveredInFull Orders
       IF(
         PurchaseOrderScheduleLine.DeliveryCompletedFlag_ELIKZ = 'X',
@@ -199,9 +210,9 @@ WITH
             TRUE,
             FALSE)
         ),
-        NULL) AS VendorInFullDelivery,
+        NULL) AS IsDeliveredInFull,
 
-      --Vendor Invoice Accuracy
+      -- Vendor Invoice Accuracy
       -- TRUE stands for Accurate Invoices and FALSE stands for Inaccurate Invoices
       IF(
         PurchaseOrderScheduleLine.DeliveryCompletedFlag_ELIKZ = 'X',
@@ -248,44 +259,46 @@ WITH
             TRUE,
             FALSE)
         ),
-        NULL) AS GoodsReceiptAccuracy,
+        NULL) AS IsGoodsReceiptAccurate,
 
-      --Goods Receipt Quantity
+      -- Vendor Spend Analysis In Source Currency
+      -- Goods Receipt Amount In Source Currency
+      IF(POOrderHistory.MovementType__inventoryManagement___BWART = '101',
+        POOrderHistory.AmountInLocalCurrency_DMBTR,
+        (POOrderHistory.AmountInLocalCurrency_DMBTR * -1)
+      ) AS GoodsReceiptAmountInSourceCurrency,
+
+      -- Goods Receipt Quantity
       IF(
         POOrderHistory.MovementType__inventoryManagement___BWART = '101',
         POOrderHistory.Quantity_MENGE,
         (POOrderHistory.Quantity_MENGE * -1)
-      ) AS GoodsReceiptQuantity,
-
-      --Vendor Spend Analysis In Source Currency
-      --Goods Receipt Amount In Source Currency
-      IF(POOrderHistory.MovementType__inventoryManagement___BWART = '101',
-        POOrderHistory.AmountInLocalCurrency_DMBTR,
-        (POOrderHistory.AmountInLocalCurrency_DMBTR * -1)
-      ) AS GoodsReceiptAmountInSourceCurrency
-
-    --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-    --## uncomment currency_conversion in POOrderHistory
-    --Vendor Spend Analysis In Target Currency
-    --Goods Receipt Amount In Target Currency
-    -- IF(POOrderHistory.MovementType__inventoryManagement___BWART = '101',
-    --   POOrderHistory.AmountInTargetCurrency_DMBTR,
-    --   (POOrderHistory.AmountInTargetCurrency_DMBTR * -1)
-    -- ) AS GoodsReceiptAmountInTargetCurrency
+      ) AS GoodsReceiptQuantity
     FROM
       PurchaseOrderScheduleLine
     LEFT JOIN
-      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.POOrderHistory` AS POOrderHistory
+      (
+        SELECT
+          Client_MANDT,
+          PurchasingDocumentNumber_EBELN,
+          ItemNumberOfPurchasingDocument_EBELP,
+          MovementType__inventoryManagement___BWART,
+          AmountInLocalCurrency_DMBTR,
+          CurrencyKey_WAERS,
+          PostingDateInTheDocument_BUDAT,
+          Quantity_MENGE
+        FROM `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.PurchaseDocumentsHistory`
+        --## TransactioneventType_VGABE='1' -> Goods Receipt
+        WHERE TransactioneventType_VGABE = '1'
+          --## MovementType__inventoryManagement___BWART='101' -> Goods Receipt
+          --## MovementType__inventoryManagement___BWART='102' -> Returns
+          --## MovementType__inventoryManagement___BWART='122' or '161' -> Rejections
+          AND MovementType__inventoryManagement___BWART IN ('101', '102', '161', '122')
+      ) AS POOrderHistory
       ON
         PurchaseOrderScheduleLine.Client_MANDT = POOrderHistory.Client_MANDT
         AND PurchaseOrderScheduleLine.DocumentNumber_EBELN = POOrderHistory.PurchasingDocumentNumber_EBELN
         AND PurchaseOrderScheduleLine.Item_EBELP = POOrderHistory.ItemNumberOfPurchasingDocument_EBELP
-        --## TransactioneventType_VGABE='1' -> Goods Receipt
-        AND POOrderHistory.TransactioneventType_VGABE = '1'
-        --## MovementType__inventoryManagement___BWART='101' -> Goods Receipt
-        --## MovementType__inventoryManagement___BWART='102' -> Returns
-        --## MovementType__inventoryManagement___BWART='122' or '161' -> Rejections
-        AND POOrderHistory.MovementType__inventoryManagement___BWART IN ('101', '102', '161', '122')
   ),
 
   PurchaseDocuments AS (
@@ -300,18 +313,11 @@ WITH
       MAX(PurchaseOrdersGoodsReceipt.OrderDateOfScheduleLine_BEDAT) AS OrderDateOfScheduleLine_BEDAT,
       MAX(PurchaseOrdersGoodsReceipt.PostingDateInTheDocument_BUDAT) AS PostingDateInTheDocument_BUDAT,
       SUM(PurchaseOrdersGoodsReceipt.AmountInLocalCurrency_DMBTR) AS AmountInLocalCurrency_DMBTR,
-      --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-      --## uncomment currency_conversion in POOrderHistory
-      -- SUM(PurchaseOrdersGoodsReceipt.AmountInTargetCurrency_DMBTR) AS AmountInTargetCurrency_DMBTR,
       ANY_VALUE(PurchaseOrdersGoodsReceipt.POOrderHistoryCurrencyKey_WAERS)AS POOrderHistoryCurrencyKey_WAERS,
       AVG(PurchaseOrdersGoodsReceipt.POQuantity_MENGE) AS POQuantity_MENGE,
       ANY_VALUE(PurchaseOrdersGoodsReceipt.UoM_MEINS) AS UoM_MEINS,
       AVG(PurchaseOrdersGoodsReceipt.NetPrice_NETPR) AS NetPrice_NETPR,
       MAX(PurchaseOrdersGoodsReceipt.CreatedOn_AEDAT) AS CreatedOn_AEDAT,
-      --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-      --## uncomment currency_conversion in PurchaseDocuments
-      -- AVG(PurchaseOrdersGoodsReceipt.NetPriceInTargetCurrency_NETPR) AS NetPriceInTargetCurrency_NETPR,
-      -- AVG(PurchaseOrdersGoodsReceipt.NetOrderValueInTargetCurrency_NETWR) AS NetOrderValueInTargetCurrency_NETWR,
       ANY_VALUE(PurchaseOrdersGoodsReceipt.Status_STATU) AS Status_STATU,
       ANY_VALUE(PurchaseOrdersGoodsReceipt.MaterialNumber_MATNR) AS MaterialNumber_MATNR,
       ANY_VALUE(PurchaseOrdersGoodsReceipt.MaterialType_MTART) AS MaterialType_MTART,
@@ -321,18 +327,15 @@ WITH
       ANY_VALUE(PurchaseOrdersGoodsReceipt. VendorAccountNumber_LIFNR) AS VendorAccountNumber_LIFNR,
       ANY_VALUE(PurchaseOrdersGoodsReceipt.Company_BUKRS) AS Company_BUKRS,
       ANY_VALUE(PurchaseOrdersGoodsReceipt.Plant_WERKS) AS Plant_WERKS,
-      LOGICAL_AND(PurchaseOrdersGoodsReceipt.DeliveredOrNotDelivered) AS DeliveredOrNotDelivered,
+      LOGICAL_AND(PurchaseOrdersGoodsReceipt.IsDelivered) AS IsDelivered,
       MAX(PurchaseOrdersGoodsReceipt.VendorCycleTimeInDays) AS VendorCycleTimeInDays,
-      LOGICAL_AND(PurchaseOrdersGoodsReceipt.VendorQuality) AS VendorQuality,
+      LOGICAL_OR(PurchaseOrdersGoodsReceipt.IsRejected) AS IsRejected,
       SUM(PurchaseOrdersGoodsReceipt.RejectedQuantity) AS RejectedQuantity,
-      LOGICAL_AND(PurchaseOrdersGoodsReceipt.VendorOnTimeDelivery) AS VendorOnTimeDelivery,
-      LOGICAL_AND(PurchaseOrdersGoodsReceipt.VendorInFullDelivery) AS VendorInFullDelivery,
-      LOGICAL_AND(PurchaseOrdersGoodsReceipt.GoodsReceiptAccuracy) AS GoodsReceiptAccuracy,
+      LOGICAL_AND(PurchaseOrdersGoodsReceipt.IsDeliveredOnTime) AS IsDeliveredOnTime,
+      LOGICAL_AND(PurchaseOrdersGoodsReceipt.IsDeliveredInFull) AS IsDeliveredInFull,
+      LOGICAL_AND(PurchaseOrdersGoodsReceipt.IsGoodsReceiptAccurate) AS IsGoodsReceiptAccurate,
       SUM(PurchaseOrdersGoodsReceipt.GoodsReceiptQuantity) AS GoodsReceiptQuantity,
       SUM(PurchaseOrdersGoodsReceipt.GoodsReceiptAmountInSourceCurrency) AS GoodsReceiptAmountInSourceCurrency,
-      --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-      --## uncomment currency_conversion in POOrderHistory
-      -- SUM(PurchaseOrdersGoodsReceipt.GoodsReceiptAmountInTargetCurrency) AS GoodsReceiptAmountInTargetCurrency,
       MAX(PurchaseOrdersGoodsReceipt.YearOfPurchasingDocumentDate_BEDAT) AS YearOfPurchasingDocumentDate_BEDAT,
       MAX(PurchaseOrdersGoodsReceipt.MonthOfPurchasingDocumentDate_BEDAT) AS MonthOfPurchasingDocumentDate_BEDAT,
       MAX(PurchaseOrdersGoodsReceipt.WeekOfPurchasingDocumentDate_BEDAT) AS WeekOfPurchasingDocumentDate_BEDAT
@@ -347,129 +350,194 @@ SELECT
   PurchaseDocuments.Client_MANDT,
   PurchaseDocuments.DocumentNumber_EBELN,
   PurchaseDocuments.Item_EBELP,
-  MAX(PurchaseDocuments.PurchasingDocumentDate_BEDAT) AS PurchasingDocumentDate_BEDAT,
-  AVG(PurchaseDocuments.NetOrderValueinPOCurrency_NETWR) AS NetOrderValueinPOCurrency_NETWR,
-  ANY_VALUE(PurchaseDocuments.CurrencyKey_WAERS) AS CurrencyKey_WAERS,
-  MAX(PurchaseDocuments.ItemDeliveryDate_EINDT) AS ItemDeliveryDate_EINDT,
-  MAX(PurchaseDocuments.OrderDateOfScheduleLine_BEDAT) AS OrderDateOfScheduleLine_BEDAT,
-  MAX(PurchaseDocuments.PostingDateInTheDocument_BUDAT) AS PostingDateInTheDocument_BUDAT,
-  SUM(PurchaseDocuments.AmountInLocalCurrency_DMBTR) AS AmountInLocalCurrency_DMBTR,
-  --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-  --## uncomment currency_conversion in POOrderHistory
-  -- SUM(PurchaseDocuments.AmountInTargetCurrency_DMBTR) AS AmountInTargetCurrency_DMBTR,
-  ANY_VALUE(PurchaseDocuments.POOrderHistoryCurrencyKey_WAERS)AS POOrderHistoryCurrencyKey_WAERS,
-  AVG(PurchaseDocuments.POQuantity_MENGE) AS POQuantity_MENGE,
-  ANY_VALUE(PurchaseDocuments.UoM_MEINS) AS UoM_MEINS,
-  AVG(PurchaseDocuments.NetPrice_NETPR) AS NetPrice_NETPR,
-  --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-  --## uncomment currency_conversion in PurchaseDocuments
-  -- AVG(PurchaseDocuments.NetPriceInTargetCurrency_NETPR) AS NetPriceInTargetCurrency_NETPR,
-  -- AVG(PurchaseDocuments.NetOrderValueInTargetCurrency_NETWR) AS NetOrderValueInTargetCurrency_NETWR,
-  MAX(PurchaseDocuments.CreatedOn_AEDAT) AS CreatedOn_AEDAT,
-  ANY_VALUE(PurchaseDocuments.Status_STATU) AS Status_STATU,
-  ANY_VALUE(PurchaseDocuments.MaterialNumber_MATNR) AS MaterialNumber_MATNR,
-  ANY_VALUE(PurchaseDocuments.MaterialType_MTART) AS MaterialType_MTART,
-  ANY_VALUE(PurchaseDocuments.MaterialGroup_MATKL) AS MaterialGroup_MATKL,
-  ANY_VALUE(PurchaseDocuments.PurchasingOrganization_EKORG) AS PurchasingOrganization_EKORG,
-  ANY_VALUE(PurchaseDocuments.PurchasingGroup_EKGRP) AS PurchasingGroup_EKGRP,
-  ANY_VALUE(PurchaseDocuments.VendorAccountNumber_LIFNR) AS VendorAccountNumber_LIFNR,
-  ANY_VALUE(PurchaseDocuments.Company_BUKRS) AS Company_BUKRS,
-  ANY_VALUE(PurchaseDocuments.Plant_WERKS) AS Plant_WERKS,
-  MAX(PurchaseDocuments.YearOfPurchasingDocumentDate_BEDAT) AS YearOfPurchasingDocumentDate_BEDAT,
-  MAX(PurchaseDocuments.MonthOfPurchasingDocumentDate_BEDAT) AS MonthOfPurchasingDocumentDate_BEDAT,
-  MAX(PurchaseDocuments.WeekOfPurchasingDocumentDate_BEDAT) AS WeekOfPurchasingDocumentDate_BEDAT,
-  --DeliveryStatus
+  PurchaseDocuments.PurchasingDocumentDate_BEDAT,
+  PurchaseDocuments.NetOrderValueinPOCurrency_NETWR,
+  PurchaseDocuments.CurrencyKey_WAERS,
+  PurchaseDocuments.ItemDeliveryDate_EINDT,
+  PurchaseDocuments.OrderDateOfScheduleLine_BEDAT,
+  PurchaseDocuments.PostingDateInTheDocument_BUDAT,
+  PurchaseDocuments.AmountInLocalCurrency_DMBTR,
+  PurchaseDocuments.POOrderHistoryCurrencyKey_WAERS,
+  PurchaseDocuments.POQuantity_MENGE,
+  PurchaseDocuments.UoM_MEINS,
+  PurchaseDocuments.NetPrice_NETPR,
+  PurchaseDocuments.CreatedOn_AEDAT,
+  PurchaseDocuments.Status_STATU,
+  PurchaseDocuments.MaterialNumber_MATNR,
+  PurchaseDocuments.MaterialType_MTART,
+  PurchaseDocuments.MaterialGroup_MATKL,
+  PurchaseDocuments.PurchasingOrganization_EKORG,
+  PurchaseDocuments.PurchasingGroup_EKGRP,
+  PurchaseDocuments.VendorAccountNumber_LIFNR,
+  PurchaseDocuments.Company_BUKRS,
+  PurchaseDocuments.Plant_WERKS,
+  PurchaseDocuments.YearOfPurchasingDocumentDate_BEDAT,
+  PurchaseDocuments.MonthOfPurchasingDocumentDate_BEDAT,
+  PurchaseDocuments.WeekOfPurchasingDocumentDate_BEDAT,
+  CASE `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Period`(
+    PurchaseDocuments.Client_MANDT,
+    Companies.FiscalyearVariant_PERIV,
+    PurchaseDocuments.PurchasingDocumentDate_BEDAT)
+    WHEN 'CASE1' THEN
+      SUBSTRING(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case1`(
+        PurchaseDocuments.Client_MANDT,
+        Companies.FiscalyearVariant_PERIV,
+        PurchaseDocuments.PurchasingDocumentDate_BEDAT), 1, 4)
+    WHEN 'CASE2' THEN
+      SUBSTRING(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case2`(
+        PurchaseDocuments.Client_MANDT,
+        Companies.FiscalyearVariant_PERIV,
+        PurchaseDocuments.PurchasingDocumentDate_BEDAT), 1, 4)
+    WHEN 'CASE3' THEN
+      SUBSTRING(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case3`(
+        PurchaseDocuments.Client_MANDT,
+        Companies.FiscalyearVariant_PERIV,
+        PurchaseDocuments.PurchasingDocumentDate_BEDAT), 1, 4)
+    ELSE 'DATA ISSUE'
+  END AS FiscalYear,
+  CASE `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Period`(
+    PurchaseDocuments.Client_MANDT,
+    Companies.FiscalyearVariant_PERIV,
+    PurchaseDocuments.PurchasingDocumentDate_BEDAT)
+    WHEN 'CASE1' THEN
+      SUBSTRING(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case1`(
+        PurchaseDocuments.Client_MANDT,
+        Companies.FiscalyearVariant_PERIV,
+        PurchaseDocuments.PurchasingDocumentDate_BEDAT), 6, 2)
+    WHEN 'CASE2' THEN
+      SUBSTRING(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case2`(
+        PurchaseDocuments.Client_MANDT,
+        Companies.FiscalyearVariant_PERIV,
+        PurchaseDocuments.PurchasingDocumentDate_BEDAT), 6, 2)
+    WHEN 'CASE3' THEN
+      SUBSTRING(`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case3`(
+        PurchaseDocuments.Client_MANDT,
+        Companies.FiscalyearVariant_PERIV,
+        PurchaseDocuments.PurchasingDocumentDate_BEDAT), 6, 2)
+    ELSE 'DATA ISSUE'
+  END AS FiscalPeriod,
+  -- Invoice Quantity
+  PurchaseOrdersInvoiceReceipt.InvoiceQuantity,
+  -- Vendor Spend Analysis (Invoice Amount in Source Currency)
+  PurchaseOrdersInvoiceReceipt.InvoiceAmountInSourceCurrency,
+  -- Invoice Date
+  PurchaseOrdersInvoiceReceipt.InvoiceDate,
+  PurchaseOrdersInvoiceReceipt.YearOfInvoiceDate,
+  PurchaseOrdersInvoiceReceipt.MonthOfInvoiceDate,
+  PurchaseOrdersInvoiceReceipt.WeekOfInvoiceDate,
+  -- Invoice Count
+  PurchaseOrdersInvoiceReceipt.InvoiceCount,
+  -- The following text fields are language independent.
+  PurchasingOrganizations.PurchasingOrganizationText_EKOTX,
+  PurchasingGroups.PurchasingGroupText_EKNAM,
+  Vendors.CountryKey_LAND1,
+  Vendors.NAME1,
+  Companies.CompanyText_BUTXT,
+  Companies.FiscalyearVariant_PERIV,
+  -- The following text fields are language dependent.
+  LanguageKey.LanguageKey_SPRAS,
+  Materials.MaterialText_MAKTX,
+  MaterialTypes.DescriptionOfMaterialType_MTBEZ,
+  -- VendorCycleTime In Days
+  PurchaseDocuments.VendorCycleTimeInDays,
+  -- Rejected Quantity
+  PurchaseDocuments.RejectedQuantity,
+  -- Goods Receipt Quantity
+  PurchaseDocuments.GoodsReceiptQuantity,
+  -- Vendor Spend Analysis (Goods Receipt Amount in Source Currency)
+  PurchaseDocuments.GoodsReceiptAmountInSourceCurrency,
+  -- The following columns are having amount/prices in target currency.
+  CurrencyConversion.ExchangeRate_UKURS,
+  CurrencyConversion.ToCurrency_TCURR AS TargetCurrency_TCURR,
+  PurchaseDocuments.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS AS AmountInTargetCurrency_DMBTR,
+  PurchaseDocuments.NetPrice_NETPR * CurrencyConversion.ExchangeRate_UKURS AS NetPriceInTargetCurrency_NETPR,
+  PurchaseDocuments.NetOrderValueinPOCurrency_NETWR * CurrencyConversion.ExchangeRate_UKURS AS NetOrderValueinTargetCurrency_NETWR,
+  PurchaseDocuments.GoodsReceiptAmountInSourceCurrency * CurrencyConversion.ExchangeRate_UKURS AS GoodsReceiptAmountInTargetCurrency,
+  PurchaseOrdersInvoiceReceipt.InvoiceAmountInSourceCurrency * CurrencyConversion.ExchangeRate_UKURS AS InvoiceAmountInTargetCurrency,
+  -- DeliveryStatus
   IF(
-    LOGICAL_AND(PurchaseDocuments.DeliveredOrNotDelivered), 'Delivered', 'NotDelivered'
-  ) AS DeliveredOrNotDelivered,
-  --VendorCycleTime In Days
-  MAX(PurchaseDocuments.VendorCycleTimeInDays) AS VendorCycleTimeInDays,
-  --Vendor Quality (Rejection)
+    PurchaseDocuments.IsDelivered, TRUE, FALSE
+  ) AS IsDelivered,
+  -- Vendor Quality (Rejection)
   IF(
-    LOGICAL_AND(PurchaseDocuments.VendorQuality), 'NotRejected', 'Rejected'
-  ) AS VendorQuality,
-  --Rejected Quantity
-  AVG(PurchaseDocuments.RejectedQuantity) AS RejectedQuantity,
-  --Vendor On Time Delivery
+    PurchaseDocuments.IsRejected, TRUE, FALSE
+  ) AS IsRejected,
+  -- Vendor On Time Delivery
   IF(
-    LOGICAL_AND(PurchaseDocuments.VendorOnTimeDelivery) IS NULL,
+    PurchaseDocuments.IsDeliveredOnTime IS NULL,
     'NotApplicable',
-    IF( LOGICAL_AND(PurchaseDocuments.VendorOnTimeDelivery),
+    IF(PurchaseDocuments.IsDeliveredOnTime,
       'NotDelayed',
       'Delayed')
   ) AS VendorOnTimeDelivery,
-  --Vendor InFull Delivery
+  -- Vendor InFull Delivery
   IF(
-    LOGICAL_AND(PurchaseDocuments.VendorInFullDelivery) IS NULL,
+    PurchaseDocuments.IsDeliveredInFull IS NULL,
     'NotApplicable',
-    IF(LOGICAL_AND(PurchaseDocuments.VendorInFullDelivery),
+    IF(PurchaseDocuments.IsDeliveredInFull,
       'DeliveredInFull',
       'NotDeliveredInFull')
   ) AS VendorInFullDelivery,
-  --Vendor On Time In Full Delivery
+  -- Vendor On Time In Full Delivery
   IF(
-    LOGICAL_AND(PurchaseDocuments.VendorInFullDelivery) IS NULL OR LOGICAL_AND(PurchaseDocuments.VendorOnTimeDelivery) IS NULL,
+    PurchaseDocuments.IsDeliveredInFull IS NULL OR PurchaseDocuments.IsDeliveredOnTime IS NULL,
     'NotApplicable',
     IF(
-      LOGICAL_AND(PurchaseDocuments.VendorInFullDelivery) AND LOGICAL_AND(PurchaseDocuments.VendorOnTimeDelivery),
+      PurchaseDocuments.IsDeliveredInFull AND PurchaseDocuments.IsDeliveredOnTime,
       'OTIF',
       'NotOTIF')
-  )AS VendorOnTimeInFullDelivery,
-  --Vendor Invoice Accuracy
+  ) AS VendorOnTimeInFullDelivery,
+  -- Vendor Invoice Accuracy
   IF(
-    LOGICAL_AND(PurchaseDocuments.GoodsReceiptAccuracy) IS NULL OR SUM(PurchaseOrdersInvoiceReceipt.Quantity_MENGE) IS NULL,
+    PurchaseDocuments.IsGoodsReceiptAccurate IS NULL OR PurchaseOrdersInvoiceReceipt.InvoiceQuantity IS NULL,
     'NotApplicable',
     IF(
-      LOGICAL_AND(PurchaseDocuments.GoodsReceiptAccuracy) AND AVG(PurchaseDocuments.POQuantity_MENGE) = SUM(PurchaseOrdersInvoiceReceipt.Quantity_MENGE),
+      PurchaseDocuments.IsGoodsReceiptAccurate
+      AND PurchaseDocuments.POQuantity_MENGE = PurchaseOrdersInvoiceReceipt.InvoiceQuantity,
       'AccurateInvoice',
       'InaccurateInvoice')
   ) AS VendorInvoiceAccuracy,
-  --Goods Receipt Quantity
-  AVG(PurchaseDocuments.GoodsReceiptQuantity) AS GoodsReceiptQuantity,
-  --Vendor Spend Analysis (Goods Receipt Amount in Source Currency)
-  AVG(PurchaseDocuments.GoodsReceiptAmountInSourceCurrency) AS GoodsReceiptAmountInSourceCurrency,
-  --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-  --## uncomment currency_conversion in POOrderHistory
-  -- AVG(PurchaseOrdersGoodsReceipt.GoodsReceiptAmountInTargetCurrency) AS GoodsReceiptAmountInTargetCurrency,
-  --Past Due and Open
+  -- Past Due and Open
   IF(
-    LOGICAL_AND(PurchaseDocuments.DeliveredOrNotDelivered),
+    PurchaseDocuments.IsDelivered,
     'NotApplicable',
     IF(
-      CURRENT_DATE() > MAX(PurchaseDocuments.ItemDeliveryDate_EINDT),
+      CURRENT_DATE() > PurchaseDocuments.ItemDeliveryDate_EINDT,
       'PastDue',
       'Open')
-  ) AS PastDueOrOpenItems,
-  --Invoice Quantity
-  SUM(PurchaseOrdersInvoiceReceipt.Quantity_MENGE) AS InvoiceQuantity,
-  --Vendor Spend Analysis (Invoice Amount in Source Currency)
-  SUM(PurchaseOrdersInvoiceReceipt.AmountInLocalCurrency_DMBTR) AS InvoiceAmountInSourceCurrency,
-  --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-  --## uncomment currency_conversion in POOrderHistory
-  -- SUM(PurchaseOrdersInvoiceReceipt.AmountInTargetCurrency_DMBTR) AS InvoiceAmountInTargetCurrency,
-  --Invoice Date
-  MAX(PurchaseOrdersInvoiceReceipt.PostingDateInTheDocument_BUDAT) AS InvoiceDate,
-  MAX(PurchaseOrdersInvoiceReceipt.YearOfPostingDateInTheDocument_BUDAT) AS YearOfInvoiceDate,
-  MAX(PurchaseOrdersInvoiceReceipt.MonthOfPostingDateInTheDocument_BUDAT) AS MonthOfInvoiceDate,
-  MAX(PurchaseOrdersInvoiceReceipt.WeekOfPostingDateInTheDocument_BUDAT) AS WeekOfInvoiceDate,
-  ---Invoice Count
-  COUNT(PurchaseOrdersInvoiceReceipt.PurchasingDocumentNumber_EBELN) AS InvoiceCount,
-  --The following text fields are language independent.
-  ANY_VALUE(PurchasingOrganizations.PurchasingOrganizationText_EKOTX) AS PurchasingOrganizationText_EKOTX,
-  ANY_VALUE(PurchasingGroups.PurchasingGroupText_EKNAM) AS PurchasingGroupText_EKNAM,
-  ANY_VALUE(Vendors.CountryKey_LAND1) AS CountryKey_LAND1,
-  ANY_VALUE(Vendors.NAME1) AS NAME1,
-  ANY_VALUE(Companies.CompanyText_BUTXT) AS CompanyText_BUTXT,
-  ANY_VALUE(Companies.FiscalyearVariant_PERIV) AS FiscalyearVariant_PERIV
+  ) AS PastDueOrOpenItems
 FROM PurchaseDocuments
 LEFT JOIN
-  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.POOrderHistory` AS PurchaseOrdersInvoiceReceipt
+  (
+    SELECT
+      Client_MANDT,
+      PurchasingDocumentNumber_EBELN,
+      ItemNumberOfPurchasingDocument_EBELP,
+      SUM(Quantity_MENGE) AS InvoiceQuantity,
+      SUM(AmountInLocalCurrency_DMBTR) AS InvoiceAmountInSourceCurrency,
+      -- Invoice Date
+      MAX(PostingDateInTheDocument_BUDAT) AS InvoiceDate,
+      MAX(YearOfPostingDateInTheDocument_BUDAT) AS YearOfInvoiceDate,
+      MAX(MonthOfPostingDateInTheDocument_BUDAT) AS MonthOfInvoiceDate,
+      MAX(WeekOfPostingDateInTheDocument_BUDAT) AS WeekOfInvoiceDate,
+      -- Invoice Count
+      COUNT(PurchasingDocumentNumber_EBELN) AS InvoiceCount
+    FROM
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.PurchaseDocumentsHistory`
+    --## TransactioneventType_VGABE='2' -> Invoice Receipt
+    WHERE TransactioneventType_VGABE = '2'
+    GROUP BY Client_MANDT, PurchasingDocumentNumber_EBELN, ItemNumberOfPurchasingDocument_EBELP
+  ) AS PurchaseOrdersInvoiceReceipt
   ON
     PurchaseDocuments.Client_MANDT = PurchaseOrdersInvoiceReceipt.Client_MANDT
     AND PurchaseDocuments.DocumentNumber_EBELN = PurchaseOrdersInvoiceReceipt.PurchasingDocumentNumber_EBELN
     AND PurchaseDocuments.Item_EBELP = PurchaseOrdersInvoiceReceipt.ItemNumberOfPurchasingDocument_EBELP
-    --## TransactioneventType_VGABE='2' -> Invoice Receipt
-    AND PurchaseOrdersInvoiceReceipt.TransactioneventType_VGABE = '2'
+LEFT JOIN CurrencyConversion
+  ON
+    PurchaseDocuments.Client_MANDT = CurrencyConversion.Client_MANDT
+    AND PurchaseDocuments.CurrencyKey_WAERS = CurrencyConversion.FromCurrency_FCURR
+    AND PurchaseDocuments.PurchasingDocumentDate_BEDAT = CurrencyConversion.ConvDate
+
 LEFT JOIN
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.PurchasingOrganizationsMD` AS PurchasingOrganizations
   ON
@@ -490,7 +558,16 @@ LEFT JOIN
   ON
     PurchaseDocuments.Client_MANDT = Companies.Client_MANDT
     AND PurchaseDocuments.Company_BUKRS = Companies.CompanyCode_BUKRS
-GROUP BY
-  PurchaseDocuments.Client_MANDT,
-  PurchaseDocuments.DocumentNumber_EBELN,
-  PurchaseDocuments.Item_EBELP
+CROSS JOIN LanguageKey
+LEFT JOIN
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialsMD` AS Materials
+  ON
+    PurchaseDocuments.Client_MANDT = Materials.Client_MANDT
+    AND PurchaseDocuments.MaterialNumber_MATNR = Materials.MaterialNumber_MATNR
+    AND Materials.Language_SPRAS = LanguageKey.LanguageKey_SPRAS
+LEFT JOIN
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialTypesMD` AS MaterialTypes
+  ON
+    PurchaseDocuments.Client_MANDT = MaterialTypes.Client_MANDT
+    AND PurchaseDocuments.MaterialType_MTART = MaterialTypes.MaterialType_MTART
+    AND MaterialTypes.LanguageKey_SPRAS = LanguageKey.LanguageKey_SPRAS

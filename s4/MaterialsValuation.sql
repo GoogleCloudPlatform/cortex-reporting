@@ -1,3 +1,5 @@
+---In S/4 Hana , SAP has acitvated Material Ledge ML hence they have suggested to use CKMLHD and CKMLCR
+---which has the same data compared to older tables and restricted the use of MBEW and MBEWH
 SELECT
   mbew.MANDT AS Client_MANDT,
   mbew.MATNR AS MaterialNumber_MATNR,

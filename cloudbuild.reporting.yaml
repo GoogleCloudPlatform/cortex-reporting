@@ -13,6 +13,7 @@
 #-- limitations under the License.
 steps:
   - name: gcr.io/cloud-builders/gcloud
+    id: 'reporting-legacy'
     entrypoint: "bash"
     args:
       - "-c"
@@ -28,6 +29,31 @@ steps:
           --location '${_LOCATION}' \
           --mandt '${_MANDT}' \
           --sql-flavour '${_SQL_FLAVOUR}'
+  - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
+    id: 'reporting-new'
+    waitFor: ['reporting-legacy']
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |-
+        # Reporting setting file is sql flavor specific.
+        # SQL_FLAVOUR substition variable may or may not be avialble in build.
+        # If not available directly in the build file,  we will need it from
+        # config.env file.
+        SQL_FLAVOUR='${_SQL_FLAVOUR}'
+        if [[ $$SQL_FLAVOUR == "" ]]
+        then
+          source <(cat ./sap_config.env | sed -e 's/^[ \t]*//;s/[ \t]*$//;/^#/d;/^\s*$/d;s#\([^\]\)"#\1#g;s/=\(.*\)/=\"\1\"/g;s/^/export /;s/$/;/')
+        fi
+        reporting_settings_file=reporting_settings_$$SQL_FLAVOUR.yaml
+
+        # Execute the common report generation script.
+        common/reporting/deploy.sh \
+            --gcs_logs_bucket '${_GCS_BUCKET}' \
+            --gcs_tgt_bucket '${_TGT_BUCKET}' \
+            --module_name 'SAP' \
+            --config_file 'sap_config.json' \
+            --reporting_settings_file $$reporting_settings_file
 logsBucket: "gs://$_GCS_BUCKET"
 timeout: 7200s
 substitutions:

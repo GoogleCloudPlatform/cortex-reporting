@@ -12,19 +12,18 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SalesOrderDetails_SAMPLE`
-OPTIONS(
-description = "Sales Orders Header and Items Simplified details"
-)
-AS
+#-- "Sales Orders Header and Items Simplified details"
+
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
-{% include './ecc/SalesOrderDetails_SAMPLE.sql' -%}
+( {% include './ecc/SalesOrderDetails_SAMPLE.sql' -%} )
 {% endif -%}
 
 {% if sql_flavour == 'union' -%}
+
 UNION ALL
+
 {% endif -%}
 
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
-{% include './s4/SalesOrderDetails_SAMPLE.sql' -%}
+( {% include './s4/SalesOrderDetails_SAMPLE.sql' -%} )
 {% endif -%}

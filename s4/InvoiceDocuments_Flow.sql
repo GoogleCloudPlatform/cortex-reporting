@@ -525,17 +525,6 @@ SELECT
   CalendarDateDimension_BLDAT.CalMonth AS MonthOfDocumentDate_BLDAT,
   CalendarDateDimension_BLDAT.CalWeek AS WeekOfDocumentDate_BLDAT,
   CalendarDateDimension_BLDAT.CalQuarter AS QuarterOfDocumentDate_BLDAT,
-  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
-  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
-  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
-  -- currency_conversion.conv_date AS Conversion_date,
-  -- RSEG_RBCO.rbwwr * currency_conversion.UKURS AS InvoiceAmountInTargetCurrencyofSupplierInvoice_RBWWR,
-  -- RSEG_RBCO.retamt_fc * currency_conversion.UKURS AS RetentionAmountInTargetCurrency_RETAMT_FC,
-  -- RSEG_RBCO.diff_amount * currency_conversion.UKURS AS DifferenceAmountInTargetCurrency_DIFF_AMOUNT,
-  -- RSEG_RBCO.bnkan_fw * currency_conversion.UKURS AS DeliveryCostsDistributionAmountInTargetCurrency_BNKAN_FW,
-  -- RSEG_RBCO.fwbas * currency_conversion.UKURS AS TaxBaseAmountInTargetCurrency_FWBAS,
-  -- RSEG_RBCO.wrbtr * currency_conversion.UKURS AS AmountInTargetCurrency_WRBTR,
-  -- RBKP.rmwwr * currency_conversion.UKURS AS GrossInvoiceAmountInTargetCurrency_RMWWR,
   CAST(NULL AS STRING) AS WbsElement_POSID,
   COALESCE(RBKP.bukrs, RSEG_RBCO.bukrs) AS CompanyCode_BUKRS,
   COALESCE(RBKP.gsber, RSEG_RBCO.gsber) AS BusinessArea_GSBER,
@@ -545,8 +534,8 @@ SELECT
   COALESCE(RSEG_RBCO.bnkan_fw * TCURX_WAER.currfix, RSEG_RBCO.bnkan_fw) AS DeliveryCostsDistributionAmount_BNKAN_FW,
   COALESCE(RSEG_RBCO.fwbas * TCURX_WAER.currfix, RSEG_RBCO.fwbas) AS TaxBaseAmount_FWBAS,
   COALESCE(RSEG_RBCO.wrbtr * TCURX_WAER.currfix, RSEG_RBCO.wrbtr) AS AmountinDocumentCurrency_WRBTR
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.rbkp` AS RBKP
-INNER JOIN RSEG_RBCO
+FROM RSEG_RBCO
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.rbkp` AS RBKP
   ON RSEG_RBCO.mandt = RBKP.mandt
     AND RSEG_RBCO.belnr = RBKP.belnr
     AND RSEG_RBCO.gjahr = RBKP.gjahr
@@ -560,15 +549,6 @@ INNER JOIN RSEG_RBCO
 -- Example 1,000 JPY will appear as 10.00 JPY
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURX_WAER
   ON RBKP.waers = TCURX_WAER.currkey
---##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
--- LEFT JOIN
---   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
---   ON RBKP.mandt = currency_conversion.MANDT
---     AND  RBKP.waers = currency_conversion.FCURR
---     AND RBKP.budat = currency_conversion.conv_date
---     AND currency_conversion.TCURR {{ currency }}
---##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
---     AND currency_conversion.KURST = 'M'
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
   ON CalendarDateDimension_BUDAT.Date = RBKP.budat
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BLDAT

@@ -758,24 +758,6 @@ SELECT
   CalendarDateDimension_BLDAT.CalMonth AS MonthOfDocumentDateInDocument_BLDAT,
   CalendarDateDimension_BLDAT.CalWeek AS WeekOfDocumentDateInDocument_BLDAT,
   CalendarDateDimension_BLDAT.CalQuarter AS QuarterOfDocumentDateInDocument_BLDAT,
-  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
-  -- currency_conversion.UKURS AS ExchangeRate_UKURS,
-  -- currency_conversion.TCURR AS TargetCurrency_TCURR,
-  -- currency_conversion.conv_date AS Conversion_date,
-  -- BSEG.DMBTR * currency_conversion.UKURS AS AmountInTargetCurrency_DMBTR,
-  -- BSEG.KZBTR * currency_conversion.UKURS AS OriginalReductionAmountInTargetCurrency_KZBTR,
-  -- BSEG.TXBHW * currency_conversion.UKURS AS OriginalTaxBaseAmountInTargetCurrency_TXBHW,
-  -- BSEG.MWSTS * currency_conversion.UKURS AS TaxAmountInTargetCurrency_MWSTS,
-  -- BSEG.HWBAS * currency_conversion.UKURS AS TaxBaseAmountInTargetCurrency_HWBAS,
-  -- BSEG.HWZUZ * currency_conversion.UKURS AS ProvisionAmountInTargetCurrency_HWZUZ,
-  -- BSEG.GBETR * currency_conversion.UKURS AS HedgedAmountInTargetCurrency_GBETR,
-  -- BSEG.SKNTO * currency_conversion.UKURS AS CashDiscountAmountInTargetCurrency_SKNTO,
-  -- BSEG.DMBT1 * currency_conversion.UKURS AS AmountInTargetCurrencyForTaxDistribution_DMBT1,
-  -- BSEG.WRBT1 * currency_conversion.UKURS AS AmountInTargetCurrencyForTaxBreakdown_WRBT1,
-  -- BSEG.KLIBT * currency_conversion.UKURS AS CreditControlAmountInTargetCurrency_KLIBT,
-  -- BSEG.BONFB * currency_conversion.UKURS AS AmountQualifyingForBonusInTargetCurrency_BONFB,
-  -- BSEG.PENLC1 * currency_conversion.UKURS AS PenaltyChargeAmountInFirstTargetCurrency_PENLC1,
-  -- IF(BSEG.AUGDT IS NULL, BSEG.DMBTR * currency_conversion.UKURS, 0) AS AmountInTargetCurrencyClearingDate_DMBTR,
   COALESCE(BSEG.DMBTR * TCURXHWAER.CURRFIX, BSEG.DMBTR) AS AmountInLocalCurrency_DMBTR,
   COALESCE(BSEG.WRBTR * TCURXWAERS.CURRFIX, BSEG.WRBTR) AS AmountInDocumentCurrency_WRBTR,
   COALESCE(BSEG.KZBTR * TCURXHWAER.CURRFIX, BSEG.KZBTR) AS OriginalReductionAmountInLocalCurrency_KZBTR,
@@ -858,8 +840,8 @@ SELECT
   AS DaysInArrear,
   IF(bseg.koart = 'D' AND bseg.augdt IS NULL AND bseg.H_BUDAT < CURRENT_DATE(), bseg.dmbtr, 0) AS AccountsReceivable,
   IF(bseg.koart = 'D' AND bseg.H_BUDAT < CURRENT_DATE() AND bseg.xumsw = 'X', bseg.dmbtr, 0) AS Sales
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.bkpf` AS BKPF
-INNER JOIN BSEG AS BSEG
+FROM BSEG AS BSEG
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.bkpf` AS BKPF
   ON BKPF.MANDT = BSEG.MANDT
     AND BKPF.BUKRS = BSEG.BUKRS
     AND BKPF.GJAHR = BSEG.GJAHR
@@ -882,16 +864,6 @@ LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal`
   ON BKPF.HWAE3 = TCURXHWAE3.CURRKEY
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXPSWSL
   ON BSEG.PSWSL = TCURXPSWSL.CURRKEY
---##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
---## Consider applying currency conversion on other currency keys as per your requirement
--- LEFT JOIN
---   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
---   ON BKPF.MANDT = currency_conversion.MANDT
---     AND BKPF.HWAER = currency_conversion.FCURR
---     AND BSEG.H_BUDAT = currency_conversion.conv_date
---     AND currency_conversion.TCURR {{ currency }}
---##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
---     AND currency_conversion.KURST = 'M'
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_H_BUDAT
   ON CalendarDateDimension_H_BUDAT.Date = BSEG.H_BUDAT
 LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BLDAT

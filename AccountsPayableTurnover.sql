@@ -12,13 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-#-- CORTEX-CUSTOMER: This view is in PREVIEW and may be subject to change
-
-CREATE OR REPLACE TABLE FUNCTION `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountsPayableTurnover`(KeyDate DATE)
-OPTIONS(
-  description = "Accounts Payable -- Accounts Payable Turnover"
-)
-AS ((
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/AccountsPayableTurnover.sql' -%}
 {% endif -%}
@@ -30,5 +23,3 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/AccountsPayableTurnover.sql' -%}
 {% endif -%}
-))
-;

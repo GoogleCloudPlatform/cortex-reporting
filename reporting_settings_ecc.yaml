@@ -1,0 +1,66 @@
+# This settings file drives how the BQ objects (tables/views/functions) for
+# Reporting datasets are created.
+#
+# There are two sections:
+#
+#  1. "bq_independent_objects":
+#     All BiqQuery objects that can be created in independentally, without any
+#     other depedencies.
+#     NOTE: When "turbo_mode" is enabled, these BQ objects are created in
+#           parallel.
+#
+#  2. "bq_dependent_objects":
+#      All BiqQuery objects that need to be created in a specific order due to
+#      depedencies.
+#      NOTE: "turbo_mode" does not apply to this section - i.e. each object
+#             will be created one after another.
+#
+#  At least one of the two sections need to be present.
+
+bq_dependent_objects:
+  - sql_file: SalesOrderDetails_SAMPLE.sql
+    type: view
+  
+  - sql_file: InventoryKeyMetrics.sql
+    type: table
+    table_setting:
+      load_frequency: "@weekly" # Make sure it runs after StockMonthlySnapshots
+      cluster_details: {columns: ["CompanyCode_BUKRS", "FiscalYear"]}
+
+  - sql_file: InventoryByPlant.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily" # Make sure it runs after StockWeeklySnapshots
+      cluster_details: {columns: ["CompanyCode_BUKRS", "FiscalYear"]}
+
+
+  - sql_file: AccountsPayable.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+      partition_details: {
+        column: "PostingDateInTheDocument_BUDAT",
+        partition_type: "time",
+        time_grain: "day"
+      }
+      cluster_details: {columns: ["CompanyCode_BUKRS", "FiscalYear_GJAHR"]}
+
+  - sql_file: AccountsPayableTurnover.sql
+    type: view
+
+  - sql_file: CashDiscountUtilization.sql
+    type: view
+
+  - sql_file: DaysPayableOutstanding.sql
+    type: view
+
+  - sql_file: VendorPerformance.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+      partition_details: {
+        column: "PostingDateInTheDocument_BUDAT",
+        partition_type: "time",
+        time_grain: "day"
+      }
+      cluster_details: {columns: ["Company_BUKRS", "FiscalYear"]}

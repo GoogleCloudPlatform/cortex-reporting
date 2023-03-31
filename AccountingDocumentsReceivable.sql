@@ -12,7 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-#-- CORTEX-CUSTOMER: This view is in PREVIEW and may be subject to change
 CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountingDocumentsReceivable`
 OPTIONS(
 description = " AR Accounting Documents Reporting "

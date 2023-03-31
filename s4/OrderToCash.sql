@@ -1,73 +1,3 @@
-WITH
-OneTouchOrder AS (
-  SELECT DISTINCT
-    OneTouchOrder.VBAPClient_MANDT,
-    OneTouchOrder.VBAPSalesDocument_VBELN,
-    OneTouchOrder.VBAPSalesDocument_Item_POSNR,
-    OneTouchOrder.VBAPTotalOrder_KWMENG,
-    vbrp.fkimg,
-    OneTouchOrder.OneTouchOrderCount
-  FROM
-    (
-      SELECT
-        vbap.mandt AS VBAPClient_MANDT,
-        vbap.vbeln AS VBAPSalesDocument_VBELN,
-        vbap.posnr AS VBAPSalesDocument_Item_POSNR,
-        vbap.kwmeng AS VBAPTotalOrder_KWMENG,
-        vbap.netwr AS NetValueOfTheOrderItemInDocumentCurrency_NETWR_vbap,
-        vbap.recordstamp AS RecordTimeStamp_vbap,
-        vbep.mandt AS Client_MANDT_vbep,
-        vbep.vbeln AS SalesDocument_VBELN_vbep,
-        vbep.posnr AS SalesDocumentItem_POSNR_vbep,
-        vbep.etenr AS ScheduleLineNumber_ETENR,
-        vbep.bmeng AS ConfirmedQuantity_BMENG,
-        lips.mandt AS Client_MANDT_lips,
-        lips.vbeln AS Delivery_VBELN_lips,
-        lips.posnr AS DeliveryItem_POSNR_lips,
-        lips.erdat AS CreationDate_ERDAT,
-        lips.aedat AS DateOfLastChange_AEDAT,
-        lips.recordstamp AS RecordTimeStamp_lips,
-        COUNT(*) AS OneTouchOrderCount
-      FROM
-        `{{ project_id_src }}.{{ dataset_raw_landing_s4 }}.vbap` AS vbap,
-        `{{ project_id_src }}.{{ dataset_raw_landing_s4 }}.vbep` AS vbep,
-        `{{ project_id_src }}.{{ dataset_raw_landing_s4 }}.lips` AS lips
-      WHERE
-        vbap.mandt = vbep.mandt
-        AND vbap.vbeln = vbep.vbeln
-        AND vbap.posnr = vbep.posnr
-        AND vbap.mandt = lips.mandt
-        AND vbap.vbeln = lips.vgbel
-        AND vbap.posnr = lips.vgpos
-      GROUP BY
-        vbap.mandt,
-        vbap.vbeln,
-        vbap.posnr,
-        vbap.kwmeng,
-        vbap.netwr,
-        vbap.recordstamp,
-        vbep.mandt,
-        vbep.vbeln,
-        vbep.posnr,
-        vbep.etenr,
-        vbep.bmeng,
-        lips.mandt,
-        lips.vbeln,
-        lips.posnr,
-        lips.erdat,
-        lips.aedat, lips.recordstamp
-      HAVING
-        COUNT(*) < 2 ) AS OneTouchOrder
-  INNER JOIN
-    `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbrp` AS vbrp
-    ON
-      OneTouchOrder.VBAPClient_MANDT = vbrp.mandt
-      AND OneTouchOrder.VBAPSalesDocument_VBELN = vbrp.aubel
-      AND OneTouchOrder.VBAPSalesDocument_Item_POSNR = vbrp.posnr
-  WHERE
-    OneTouchOrder.VBAPTotalOrder_KWMENG = vbrp.fkimg --and OneTouchOrderCount=1
-)
-
 SELECT
   SalesOrders.Client_MANDT,
   Deliveries.Delivery_VBELN,
@@ -295,7 +225,7 @@ LEFT JOIN
     AND CustomersMD.CountryKey_LAND1 = CountriesMD.CountryKey_LAND1
     AND CountriesMD.Language_SPRAS = MaterialsMD.Language_SPRAS
 LEFT JOIN
-  OneTouchOrder
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.OneTouchOrder` AS OneTouchOrder
   ON
     SalesOrders.Client_MANDT = OneTouchOrder.VBAPClient_MANDT
     AND SalesOrders.SalesDocument_VBELN = OneTouchOrder.VBAPSalesDocument_VBELN

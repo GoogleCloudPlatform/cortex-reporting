@@ -12,23 +12,15 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-#-- CORTEX-CUSTOMER: This view is in PREVIEW and may be subject to change
-CREATE OR REPLACE TABLE FUNCTION `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountsPayable`(KeyDate DATE)
-OPTIONS(
-  description = "Account Payables"
-)
-AS ((
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
-{% include './ecc/AccountsPayable.sql' -%}
+( {% include './ecc/AccountsPayable.sql' -%} )
 {% endif -%}
 
 {% if sql_flavour == 'union' -%}
+
 UNION ALL
 {% endif -%}
 
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
-{% include './s4/AccountsPayable.sql' -%}
+ ( {% include './s4/AccountsPayable.sql' -%} )
 {% endif -%}
-))
-;
-

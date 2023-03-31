@@ -1,5 +1,5 @@
 SELECT
-  marc.MANDT AS ClientMandt,
+  marc.MANDT AS Client_MANDT,
   marc.MATNR AS MaterialNumber_MATNR,
   marc.WERKS AS Plant_WERKS,
   marc.PSTAT AS MaintainanceStatus_PSTAT,

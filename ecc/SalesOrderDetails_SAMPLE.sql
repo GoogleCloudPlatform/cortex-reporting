@@ -89,4 +89,5 @@ LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CurrencyConversion` 
 ##CORTEX-CUSTOMER Modify the below baseline filters based on requirement
 WHERE
   ( SalesOrders.Client_MANDT = '{{ mandt }}'
-    AND CustomersMD.LanguageKey_SPRAS {{ language }} );
+    AND MaterialsMD.Language_SPRAS {{ language }} )
+

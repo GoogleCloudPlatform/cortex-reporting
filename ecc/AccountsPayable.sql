@@ -1,4 +1,15 @@
-WITH AccountingInvoices AS (
+WITH CurrencyConversion AS (
+  SELECT
+    Client_MANDT, FromCurrency_FCURR, ToCurrency_TCURR, ConvDate, ExchangeRate_UKURS
+  FROM
+    `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CurrencyConversion`
+  WHERE
+    ToCurrency_TCURR {{ currency }}
+    --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
+    AND ExchangeRateType_KURST = 'M'
+),
+
+AccountingInvoices AS (
   SELECT
     AccountingDocuments.Client_MANDT,
     AccountingDocuments.CompanyCode_BUKRS,
@@ -41,10 +52,7 @@ WITH AccountingInvoices AS (
     AccountingDocuments.YearOfPostingDateInTheDocument_BUDAT,
     AccountingDocuments.MonthOfPostingDateInTheDocument_BUDAT,
     AccountingDocuments.WeekOfPostingDateInTheDocument_BUDAT,
-    AccountingDocuments.QuarterOfPostingDateInTheDocument_BUDAT,
-    --## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-    --## uncomment currency_conversion in AccountingDocuments
-    -- AccountingDocuments.AmountInTargetCurrency_DMBTR
+    AccountingDocuments.QuarterOfPostingDateInTheDocument_BUDAT
   FROM `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountingDocuments` AS AccountingDocuments
   LEFT OUTER JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.InvoiceDocuments_Flow` AS InvoiceDocuments
     ON
@@ -63,7 +71,7 @@ WITH AccountingInvoices AS (
   UNION ALL
 
   /* Select 'Parked Invoices' from Invoice Documents */
-  SELECT DISTINCT
+  SELECT
     InvoiceDocuments.Client_MANDT,
     InvoiceDocuments.CompanyCode_BUKRS,
     InvoiceDocuments.InvoiceDocNum_BELNR AS AccountingDocumentNumber_BELNR,
@@ -106,14 +114,14 @@ WITH AccountingInvoices AS (
     InvoiceDocuments.MonthOfPostingDate_BUDAT,
     InvoiceDocuments.WeekOfPostingDate_BUDAT,
     InvoiceDocuments.QuarterOfPostingDate_BUDAT
-    ## CORTEX-CUSTOMER If you prefer to use amount in Target Currency, uncomment below and
-    ## uncomment currency_conversion in InvoiceDocuments_Flow
-    -- InvoiceDocuments.GrossInvoiceAmountInTargetCurrency_RMWWR
-
   FROM
     `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.InvoiceDocuments_Flow` AS InvoiceDocuments
   WHERE
-    InvoiceDocuments.Invstatus_RBSTAT = 'A'  ## CORTEX-CUSTOMER: Please add relevant Invoice Status. Value 'A' represents that the document is Parked and not posted
+    ## CORTEX-CUSTOMER: Please add relevant Invoice Status. Value 'A' represents that the document is Parked and not posted
+    InvoiceDocuments.Invstatus_RBSTAT = 'A'
+  QUALIFY RANK() OVER (
+    PARTITION BY InvoiceDocuments.Client_MANDT, InvoiceDocuments.CompanyCode_BUKRS, InvoiceDocuments.InvoiceDocNum_BELNR
+    ORDER BY InvoiceDocuments.InvoiceDocLineNum_BUZEI) = 1
 ),
 
 AccountingInvoicesKPI AS (
@@ -149,25 +157,25 @@ AccountingInvoicesKPI AS (
     CASE `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Period`(
       AccountingInvoices.Client_MANDT,
       CompaniesMD.FiscalyearVariant_PERIV,
-      DATE_SUB(DATE_TRUNC(KeyDate, MONTH), INTERVAL 1 DAY)
+      DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 1 DAY)
     )
       WHEN 'CASE1' THEN
         `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case1`(
           AccountingInvoices.Client_MANDT,
           CompaniesMD.FiscalyearVariant_PERIV,
-          DATE_SUB(DATE_TRUNC(KeyDate, MONTH), INTERVAL 1 DAY)
+          DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 1 DAY)
         )
       WHEN 'CASE2' THEN
         `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case2`(
           AccountingInvoices.Client_MANDT,
           CompaniesMD.FiscalyearVariant_PERIV,
-          DATE_SUB(DATE_TRUNC(KeyDate, MONTH), INTERVAL 1 DAY)
+          DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 1 DAY)
         )
       WHEN 'CASE3' THEN
         `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Fiscal_Case3`(
           AccountingInvoices.Client_MANDT,
           CompaniesMD.FiscalyearVariant_PERIV,
-          DATE_SUB(DATE_TRUNC(KeyDate, MONTH), INTERVAL 1 DAY)
+          DATE_SUB(DATE_TRUNC(CURRENT_DATE(), MONTH), INTERVAL 1 DAY)
         )
     END AS KeyFiscPeriod,
 
@@ -239,34 +247,51 @@ SELECT
   AccountingInvoicesKPI.InvoiceDocumenttype_BLART,
   POOrderHistory.MovementType__inventoryManagement___BWART,
   POOrderHistory.AmountInLocalCurrency_DMBTR AS POOrderHistory_AmountInLocalCurrency_DMBTR,
+  POOrderHistory.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS AS POOrderHistory_AmountInTargetCurrency_DMBTR,
   AccountingInvoicesKPI.YearOfPostingDateInTheDocument_BUDAT,
   AccountingInvoicesKPI.MonthOfPostingDateInTheDocument_BUDAT,
   AccountingInvoicesKPI.WeekOfPostingDateInTheDocument_BUDAT,
   AccountingInvoicesKPI.QuarterOfPostingDateInTheDocument_BUDAT,
- -- AccountingInvoicesKPI.AmountInTargetCurrency_DMBTR,
- -- InvoiceDocuments.GrossInvoiceAmountInTargetCurrency_RMWWR,
+  AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS AS AmountInTargetCurrency_DMBTR,
+  CurrencyConversion.ExchangeRate_UKURS,
+  CurrencyConversion.ToCurrency_TCURR AS TargetCurrency_TCURR,
+
   /* Overdue Amount */
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
-    AccountingInvoicesKPI.AccountType_KOART = 'K' AND KeyDate > AccountingInvoicesKPI.NetDueDate,
+    AccountingInvoicesKPI.AccountType_KOART = 'K' AND CURRENT_DATE() > AccountingInvoicesKPI.NetDueDate,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS OverdueAmount,
+  ) AS OverdueAmountInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+    AccountingInvoicesKPI.AccountType_KOART = 'K' AND CURRENT_DATE() > AccountingInvoicesKPI.NetDueDate,
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS OverdueAmountInTargetCurrency,
 
   /* Outstanding But Not Overdue */
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
-    AccountingInvoicesKPI.AccountType_KOART = 'K' AND KeyDate <= AccountingInvoicesKPI.NetDueDate,
+    AccountingInvoicesKPI.AccountType_KOART = 'K' AND CURRENT_DATE() <= AccountingInvoicesKPI.NetDueDate,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS OutstandingButNotOverdue,
+  ) AS OutstandingButNotOverdueInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+    AccountingInvoicesKPI.AccountType_KOART = 'K' AND CURRENT_DATE() <= AccountingInvoicesKPI.NetDueDate,
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS OutstandingButNotOverdueInTargetCurrency,
 
   /* Overdue On Past Date */
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
     AccountingInvoicesKPI.AccountType_KOART = 'K'
-    AND AccountingInvoicesKPI.PostingDate_BUDAT < KeyDate
-    AND AccountingInvoicesKPI.NetDueDate < KeyDate
+    AND AccountingInvoicesKPI.PostingDate_BUDAT < CURRENT_DATE()
+    AND AccountingInvoicesKPI.NetDueDate < CURRENT_DATE()
     AND AccountingInvoicesKPI.ClearingDate_AUGDT IS NULL,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
@@ -276,7 +301,23 @@ SELECT
     AccountingInvoicesKPI.FollowOnDocumentType_REBZT = 'Z',
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS OverdueOnPastDate,
+  ) AS OverdueOnPastDateInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+    AccountingInvoicesKPI.AccountType_KOART = 'K'
+    AND AccountingInvoicesKPI.PostingDate_BUDAT < CURRENT_DATE()
+    AND AccountingInvoicesKPI.NetDueDate < CURRENT_DATE()
+    AND AccountingInvoicesKPI.ClearingDate_AUGDT IS NULL,
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  )
+  + IF(
+    ## CORTEX-CUSTOMER: Please add relevant Follow On Document Type. Value 'Z' represents Partial Payment against an open invoice
+    AccountingInvoicesKPI.FollowOnDocumentType_REBZT = 'Z',
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS OverdueOnPastDateInTargetCurrency,
 
   /* Partial Payments */
   IF(
@@ -284,7 +325,14 @@ SELECT
     AccountingInvoicesKPI.FollowOnDocumentType_REBZT = 'Z',
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS PartialPayments,
+  ) AS PartialPaymentsInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Follow On Document Type. Value 'Z' represents Partial Payment against an open invoice
+    AccountingInvoicesKPI.FollowOnDocumentType_REBZT = 'Z',
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS PartialPaymentsInTargetCurrency,
 
   /* Late Payments */
   IF(
@@ -292,18 +340,35 @@ SELECT
     AccountingInvoicesKPI.AccountType_KOART = 'K' AND AccountingInvoicesKPI.ClearingDate_AUGDT > AccountingInvoicesKPI.NetDueDate,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS LatePayments,
+  ) AS LatePaymentsInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+    AccountingInvoicesKPI.AccountType_KOART = 'K' AND AccountingInvoicesKPI.ClearingDate_AUGDT > AccountingInvoicesKPI.NetDueDate,
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS LatePaymentsInTargetCurrency,
 
   /* Upcoming Payments */
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
     ## CORTEX-CUSTOMER: Please adjust the number of days for upcoming payments
     AccountingInvoicesKPI.AccountType_KOART = 'K'
-    AND AccountingInvoicesKPI.NetDueDate BETWEEN KeyDate AND DATE_ADD(KeyDate, INTERVAL 14 DAY)
+    AND AccountingInvoicesKPI.NetDueDate BETWEEN CURRENT_DATE() AND DATE_ADD(CURRENT_DATE(), INTERVAL 14 DAY)
     AND AccountingInvoicesKPI.ClearingDate_AUGDT IS NULL,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS UpcomingPayments,
+  ) AS UpcomingPaymentsInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+    ## CORTEX-CUSTOMER: Please adjust the number of days for upcoming payments
+    AccountingInvoicesKPI.AccountType_KOART = 'K'
+    AND AccountingInvoicesKPI.NetDueDate BETWEEN CURRENT_DATE() AND DATE_ADD(CURRENT_DATE(), INTERVAL 14 DAY)
+    AND AccountingInvoicesKPI.ClearingDate_AUGDT IS NULL,
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS UpcomingPaymentsInTargetCurrency,
 
   /* Potential Penalty */
   IF(
@@ -311,8 +376,16 @@ SELECT
     AccountingInvoicesKPI.AccountType_KOART = 'K' AND AccountingInvoicesKPI.ClearingDate_AUGDT > AccountingInvoicesKPI.NetDueDate,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) * COALESCE(SAFE_CAST(VendorConfig.LowField_LOW AS INT64), 0) AS PotentialPenalty,
+  ) * COALESCE(SAFE_CAST(VendorConfig.LowField_LOW AS INT64), 0) AS PotentialPenaltyInSourceCurrency,
 
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+    AccountingInvoicesKPI.AccountType_KOART = 'K' AND AccountingInvoicesKPI.ClearingDate_AUGDT > AccountingInvoicesKPI.NetDueDate,
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) * COALESCE(SAFE_CAST(VendorConfig.LowField_LOW AS INT64), 0) AS PotentialPenaltyInTargetCurrency,
+
+  /* Purchase */
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Movement Types.
     -- Value '101' represents 'GR Goods Receipt' and '501' represents 'Receipt w/o PO'
@@ -325,14 +398,30 @@ SELECT
       AccountingInvoicesKPI.AccountType_KOART = 'M' AND POOrderHistory.MovementType__inventoryManagement___BWART IN ('102', '502'),
       AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * -1, 0
     )
-  ) AS TotalPurchases,
+  ) AS PurchaseInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Movement Types.
+    -- Value '101' represents 'GR Goods Receipt' and '501' represents 'Receipt w/o PO'
+    AccountingInvoicesKPI.AccountType_KOART = 'M' AND POOrderHistory.MovementType__inventoryManagement___BWART IN ('101', '501'),
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    IF(
+      ## CORTEX-CUSTOMER: Please add relevant Movement Types.
+      -- Value '102' represents 'GR for PO reversal (full or any one of the line item)'
+      -- Value '502' represents 'Return Receipt w/o PO' (Receipt made against movement type 501 document is cancelled.)
+      AccountingInvoicesKPI.AccountType_KOART = 'M' AND POOrderHistory.MovementType__inventoryManagement___BWART IN ('102', '502'),
+      AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS * -1, 0
+    )
+  ) AS PurchaseInTargetCurrency,
 
   /* Parked Invoices */
-  IF(AccountingInvoicesKPI.Invstatus_RBSTAT = 'A', TRUE, FALSE) AS IsParkedInvoice,  ## CORTEX-CUSTOMER: Please add relevant Invoice Status. Value 'A' represents that the document is Parked and not posted
+  ## CORTEX-CUSTOMER: Please add relevant Invoice Status. Value 'A' represents that the document is Parked and not posted
+  IF(AccountingInvoicesKPI.Invstatus_RBSTAT = 'A', TRUE, FALSE) AS IsParkedInvoice,
 
   /* Blocked Invoices */
-  IF(AccountingInvoicesKPI.PaymentBlockKey_ZLSPR IN ('A', 'B'), TRUE, FALSE) AS IsBlockedInvoice, ## CORTEX-CUSTOMER: Please add relevant Payment Block Keys. Value 'A' represents 'Locked for Payment' and 'B' represents 'Blocked for Payment'
-
+  ## CORTEX-CUSTOMER: Please add relevant Payment Block Keys. Value 'A' represents 'Locked for Payment' and 'B' represents 'Blocked for Payment'
+  IF(AccountingInvoicesKPI.PaymentBlockKey_ZLSPR IN ('A', 'B'), TRUE, FALSE) AS IsBlockedInvoice,
+  
   /* Cash Discount Received */
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Document Types. Value 'KZ' represents ' Vendor Payment' and 'ZP' represents 'Payment Posting'
@@ -340,7 +429,15 @@ SELECT
     AccountingInvoicesKPI.AccountingDocumenttype_BLART IN ('KZ', 'ZP') AND AccountingInvoicesKPI.TransactionKey_KTOSL = 'SKE',
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS CashDiscountReceived,
+  ) AS CashDiscountReceivedInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Document Types. Value 'KZ' represents ' Vendor Payment' and 'ZP' represents 'Payment Posting'
+    ## CORTEX-CUSTOMER: Please add relevant Transaction Key. Value 'SKE' represents ' Cash Discount Received'
+    AccountingInvoicesKPI.AccountingDocumenttype_BLART IN ('KZ', 'ZP') AND AccountingInvoicesKPI.TransactionKey_KTOSL = 'SKE',
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS CashDiscountReceivedInTargetCurrency,
 
   /* Target Cash Discount */
   IF(
@@ -348,7 +445,14 @@ SELECT
     AccountingInvoicesKPI.PostingKey_BSCHL = '31',
     (AccountingInvoicesKPI.AmountEligibleForCashDiscountInDocumentCurrency_SKFBT * AccountingInvoicesKPI.CashDiscountPercentage1_ZBD1P) / 100,
     0
-  ) AS TargetCashDiscount,
+  ) AS TargetCashDiscountInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Posting Key. Value '31' represents 'Vendor Invoice'
+    AccountingInvoicesKPI.PostingKey_BSCHL = '31',
+    (AccountingInvoicesKPI.AmountEligibleForCashDiscountInDocumentCurrency_SKFBT * CurrencyConversion.ExchangeRate_UKURS * AccountingInvoicesKPI.CashDiscountPercentage1_ZBD1P) / 100,
+    0
+  ) AS TargetCashDiscountInTargetCurrency,
 
   /* Amount Of Open Debit Items */
   IF(
@@ -357,7 +461,15 @@ SELECT
     AccountingInvoicesKPI.Accounttype_KOART = 'K' AND AccountingInvoicesKPI.SpecialGlIndicator_UMSKZ = 'A',
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
     0
-  ) AS AmountOfOpenDebitItems,
+  ) AS AmountOfOpenDebitItemsInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
+    ## CORTEX-CUSTOMER: Please add relevant Special GI Indicator. Value 'A' represents 'Down Payment'
+    AccountingInvoicesKPI.Accounttype_KOART = 'K' AND AccountingInvoicesKPI.SpecialGlIndicator_UMSKZ = 'A',
+    AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
+    0
+  ) AS AmountOfOpenDebitItemsInTargetCurrency,
 
   /* Amount Of Return */
   IF(
@@ -365,14 +477,21 @@ SELECT
     POOrderHistory.MovementType__inventoryManagement___BWART = '122',
     POOrderHistory.AmountInLocalCurrency_DMBTR * POOrderHistory.Quantity_MENGE,
     0
-  ) AS AmountOfReturn
+  ) AS AmountOfReturnInSourceCurrency,
+
+  IF(
+    ## CORTEX-CUSTOMER: Please add relevant Movement Type. Value '122' represents 'RE return to Vendor'
+    POOrderHistory.MovementType__inventoryManagement___BWART = '122',
+    POOrderHistory.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS * POOrderHistory.Quantity_MENGE,
+    0
+  ) AS AmountOfReturnInTargetCurrency
 
 FROM AccountingInvoicesKPI
 LEFT OUTER JOIN (
   /* Vendors may contain multiple addresses that may produce multiple VendorsMD records, pick the name agaist latest entry */
   SELECT Client_MANDT, AccountNumberOfVendorOrCreditor_LIFNR, NAME1
   FROM `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.VendorsMD`
-  WHERE ValidToDate_DATE_TO	= '9999-12-31'
+  WHERE ValidToDate_DATE_TO = '9999-12-31'
 ) AS VendorsMD
 ON AccountingInvoicesKPI.Client_MANDT = VendorsMD.Client_MANDT
   AND AccountingInvoicesKPI.AccountNumberOfVendorOrCreditor_LIFNR = VendorsMD.AccountNumberOfVendorOrCreditor_LIFNR
@@ -380,9 +499,14 @@ LEFT OUTER JOIN
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.VendorConfig` AS VendorConfig
   ## CORTEX-CUSTOMER Vendor Name in the config follows the format 'Z_VENDOR_{VendorId}'. Please change the logic if the name follows a different format.
   ON VendorsMD.AccountNumberOfVendorOrCreditor_LIFNR = ARRAY_REVERSE(SPLIT(VendorConfig.NameOfVariantVariable_NAME, '_'))[SAFE_OFFSET(0)]
-LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.POOrderHistory` AS POOrderHistory
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.PurchaseDocumentsHistory` AS POOrderHistory
   ON AccountingInvoicesKPI.Client_MANDT = POOrderHistory.Client_MANDT
     AND AccountingInvoicesKPI.PurchasingDocumentNumber_EBELN = POOrderHistory.PurchasingDocumentNumber_EBELN
     AND AccountingInvoicesKPI.ItemNumberOfPurchasingDocument_EBELP = POOrderHistory.ItemNumberOfPurchasingDocument_EBELP
     AND AccountingInvoicesKPI.FiscalYear_GJAHR = POOrderHistory.MaterialDocumentYear_GJAHR
     AND AccountingInvoicesKPI.ObjectKey_AWKEY = CONCAT(POOrderHistory.NumberOfMaterialDocument_BELNR, POOrderHistory.MaterialDocumentYear_GJAHR)
+LEFT JOIN CurrencyConversion
+  ON
+    AccountingInvoicesKPI.Client_MANDT = CurrencyConversion.Client_MANDT
+    AND AccountingInvoicesKPI.CurrencyKey_WAERS = CurrencyConversion.FromCurrency_FCURR
+    AND AccountingInvoicesKPI.PostingDateInTheDocument_BUDAT = CurrencyConversion.ConvDate
