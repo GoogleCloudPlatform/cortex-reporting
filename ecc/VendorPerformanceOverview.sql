@@ -222,6 +222,6 @@ LEFT JOIN
     VendorPerformance.Client_MANDT = MaterialLedger.Client_MANDT
     AND VendorPerformance.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
     AND VendorPerformance.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
-    AND VendorPerformance.FiscalYear = MaterialLedger.FiscalYear_LFGJA
+    AND VendorPerformance.FiscalYear = MaterialLedger.FiscalYear
     AND VendorPerformance.FiscalPeriod = MaterialLedger.PostingPeriod_LFMON
     AND MaterialLedger.ValuationType_BWTAR = ''

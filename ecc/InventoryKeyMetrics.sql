@@ -73,7 +73,7 @@ WITH
         StockMonthlySnapshots.Client_MANDT = MaterialLedger.Client_MANDT
         AND StockMonthlySnapshots.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
         AND StockMonthlySnapshots.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
-        AND StockMonthlySnapshots.FiscalYear = MaterialLedger.FiscalYear_LFGJA
+        AND StockMonthlySnapshots.FiscalYear = MaterialLedger.FiscalYear
         AND StockMonthlySnapshots.FiscalPeriod = MaterialLedger.PostingPeriod_LFMON
         AND MaterialLedger.ValuationType_BWTAR = ''
     LEFT JOIN
