@@ -188,20 +188,20 @@ SELECT
     WHEN VendorPerformance.MaterialType_MTART = 'FERT' OR VendorPerformance.MaterialType_MTART = 'HALB'
       THEN COALESCE(MaterialLedger.StandardCost_STPRS, VendorPerformance.AverageNetPrice)
     WHEN VendorPerformance.MaterialType_MTART = 'ROH' OR VendorPerformance.MaterialType_MTART = 'HIBE'
-      THEN COALESCE(MaterialLedger.MovingAveragePrice_VERPR, VendorPerformance.AverageNetPrice)
+      THEN COALESCE(MaterialLedger.MovingAveragePrice, VendorPerformance.AverageNetPrice)
   END AS ValuationPrice,
   CASE
     WHEN VendorPerformance.MaterialType_MTART = 'FERT' OR VendorPerformance.MaterialType_MTART = 'HALB'
       THEN COALESCE(MaterialLedger.StandardCost_STPRS, VendorPerformance.AverageNetPrice) * VendorPerformance.ExchangeRate_UKURS
     WHEN VendorPerformance.MaterialType_MTART = 'ROH' OR VendorPerformance.MaterialType_MTART = 'HIBE'
-      THEN COALESCE(MaterialLedger.MovingAveragePrice_VERPR, VendorPerformance.AverageNetPrice) * VendorPerformance.ExchangeRate_UKURS
+      THEN COALESCE(MaterialLedger.MovingAveragePrice, VendorPerformance.AverageNetPrice) * VendorPerformance.ExchangeRate_UKURS
   END AS ValuationPriceInTargetCurrency,
   ABS(
     CASE
       WHEN VendorPerformance.MaterialType_MTART = 'FERT' OR VendorPerformance.MaterialType_MTART = 'HALB'
         THEN COALESCE(MaterialLedger.StandardCost_STPRS, VendorPerformance.AverageNetPrice)
       WHEN VendorPerformance.MaterialType_MTART = 'ROH' OR VendorPerformance.MaterialType_MTART = 'HIBE'
-        THEN COALESCE(MaterialLedger.MovingAveragePrice_VERPR, VendorPerformance.AverageNetPrice)
+        THEN COALESCE(MaterialLedger.MovingAveragePrice, VendorPerformance.AverageNetPrice)
     END
     - VendorPerformance.AverageNetPrice
   ) * VendorPerformance.POQuantity_MENGE AS PurchasePriceVariance,
@@ -210,7 +210,7 @@ SELECT
       WHEN VendorPerformance.MaterialType_MTART = 'FERT' OR VendorPerformance.MaterialType_MTART = 'HALB'
         THEN COALESCE(MaterialLedger.StandardCost_STPRS, VendorPerformance.AverageNetPrice)
       WHEN VendorPerformance.MaterialType_MTART = 'ROH' OR VendorPerformance.MaterialType_MTART = 'HIBE'
-        THEN COALESCE(MaterialLedger.MovingAveragePrice_VERPR, VendorPerformance.AverageNetPrice)
+        THEN COALESCE(MaterialLedger.MovingAveragePrice, VendorPerformance.AverageNetPrice)
     END
     - VendorPerformance.AverageNetPrice
   ) * VendorPerformance.POQuantity_MENGE * VendorPerformance.ExchangeRate_UKURS AS PurchasePriceVarianceInTargetCurrency
@@ -223,5 +223,5 @@ LEFT JOIN
     AND VendorPerformance.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
     AND VendorPerformance.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
     AND VendorPerformance.FiscalYear = MaterialLedger.FiscalYear
-    AND VendorPerformance.FiscalPeriod = MaterialLedger.PostingPeriod_LFMON
+    AND VendorPerformance.FiscalPeriod = MaterialLedger.PostingPeriod
     AND MaterialLedger.ValuationType_BWTAR = ''

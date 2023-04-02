@@ -58,12 +58,12 @@ WITH
         MaterialLedger.StandardCost_STPRS) AS StandardCost_STPRS,
       --If MovingAveragePrice is null for current month then it picks up the last existing MovingAveragePrice
       IF(
-        MaterialLedger.MovingAveragePrice_VERPR IS NULL,
-        LAST_VALUE(MaterialLedger.MovingAveragePrice_VERPR IGNORE NULLS) OVER (
+        MaterialLedger.MovingAveragePrice IS NULL,
+        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS) OVER (
           ORDER BY StockWeeklySnapshots.MaterialNumber_MATNR,
             StockWeeklySnapshots.Plant_WERKS,
             StockWeeklySnapshots.WeekEndDate),
-        MaterialLedger.MovingAveragePrice_VERPR) AS MovingAveragePrice_VERPR
+        MaterialLedger.MovingAveragePrice) AS MovingAveragePrice_VERPR
     FROM
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockWeeklySnapshots` AS StockWeeklySnapshots
     LEFT JOIN
@@ -84,7 +84,7 @@ WITH
         AND StockWeeklySnapshots.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
         AND StockWeeklySnapshots.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
         AND StockWeeklySnapshots.FiscalYear = MaterialLedger.FiscalYear
-        AND StockWeeklySnapshots.FiscalPeriod = MaterialLedger.PostingPeriod_LFMON
+        AND StockWeeklySnapshots.FiscalPeriod = MaterialLedger.PostingPeriod
         AND MaterialLedger.ValuationType_BWTAR = ''
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StorageLocationsMD` AS StorageLocationsMD

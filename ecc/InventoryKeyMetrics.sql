@@ -53,12 +53,12 @@ WITH
             StockMonthlySnapshots.MonthEndDate),
         MaterialLedger.StandardCost_STPRS) AS StandardCost_STPRS,
       IF(
-        MaterialLedger.MovingAveragePrice_VERPR IS NULL,
-        LAST_VALUE(MaterialLedger.MovingAveragePrice_VERPR IGNORE NULLS) OVER (
+        MaterialLedger.MovingAveragePrice IS NULL,
+        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS) OVER (
           ORDER BY StockMonthlySnapshots.MaterialNumber_MATNR,
             StockMonthlySnapshots.Plant_WERKS,
             StockMonthlySnapshots.MonthEndDate),
-        MaterialLedger.MovingAveragePrice_VERPR) AS MovingAveragePrice_VERPR,
+        MaterialLedger.MovingAveragePrice) AS MovingAveragePrice_VERPR,
       SUM(StockMonthlySnapshots.QuantityMonthlyCumulative) AS QuantityMonthlyCumulative,
       SUM(StockMonthlySnapshots.AmountMonthlyCumulative) AS AmountMonthlyCumulative,
       SUM(StockMonthlySnapshots.StockOnHand) AS StockOnHand,
@@ -74,7 +74,7 @@ WITH
         AND StockMonthlySnapshots.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
         AND StockMonthlySnapshots.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
         AND StockMonthlySnapshots.FiscalYear = MaterialLedger.FiscalYear
-        AND StockMonthlySnapshots.FiscalPeriod = MaterialLedger.PostingPeriod_LFMON
+        AND StockMonthlySnapshots.FiscalPeriod = MaterialLedger.PostingPeriod
         AND MaterialLedger.ValuationType_BWTAR = ''
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SlowMovingThreshold` AS SlowMovingThreshold
@@ -98,7 +98,7 @@ WITH
       StockMonthlySnapshots.LanguageKey_SPRAS,
       MaterialLedger.ValueOfTotalValuatedStock_SALK3,
       MaterialLedger.StandardCost_STPRS,
-      MaterialLedger.MovingAveragePrice_VERPR,
+      MaterialLedger.MovingAveragePrice,
       StockMonthlySnapshots.BaseUnitOfMeasure_MEINS,
       StockMonthlySnapshots.CurrencyKey_WAERS,
       StockMonthlySnapshots.FiscalYear,

@@ -6,12 +6,12 @@ SELECT
   mbew.BWTAR AS ValuationType_BWTAR,
   mbew.BWKEY AS ValuationArea_BWKEY,
   mbew.PEINH AS PriceUnit_PEINH,
-  mbew.LFMON AS PostingPeriod_LFMON,
+  mbew.LFMON AS PostingPeriod,
   mbew.LFGJA AS FiscalYear,
   mbew.VPRSV AS PriceControlIndicator_VPRSV,
   COALESCE(mbew.STPRS * currency_decimal.CURRFIX, mbew.STPRS) AS StandardCost_STPRS,
   COALESCE(mbew.SALK3 * currency_decimal.CURRFIX, mbew.SALK3) AS ValueOfTotalValuatedStock_SALK3,
-  COALESCE(mbew.VERPR * currency_decimal.CURRFIX, mbew.VERPR) AS MovingAveragePrice_VERPR,
+  COALESCE(mbew.VERPR * currency_decimal.CURRFIX, mbew.VERPR) AS MovingAveragePrice,
   t001.waers AS CurrencyKey_WAERS
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.mbew` AS mbew
 LEFT JOIN
@@ -32,12 +32,12 @@ SELECT
   mbewh.BWTAR AS ValuationType_BWTAR,
   mbewh.BWKEY AS ValuationArea_BWKEY,
   mbewh.PEINH AS PriceUnit_PEINH,
-  mbewh.LFMON AS PostingPeriod_LFMON,
+  mbewh.LFMON AS PostingPeriod,
   mbewh.LFGJA AS FiscalYear,
   mbewh.VPRSV AS PriceControIndicator_VPRSV,
   COALESCE(mbewh.STPRS * currency_decimal.CURRFIX, mbewh.STPRS) AS StandardCost_STPRS,
   COALESCE(mbewh.SALK3 * currency_decimal.CURRFIX, mbewh.SALK3) AS ValueOfTotalValuatedStock_SALK3,
-  COALESCE(mbewh.VERPR * currency_decimal.CURRFIX, mbewh.VERPR) AS MovingAveragePrice_VERPR,
+  COALESCE(mbewh.VERPR * currency_decimal.CURRFIX, mbewh.VERPR) AS MovingAveragePrice,
   t001.waers AS CurrencyKey_WAERS
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.mbewh` AS mbewh
