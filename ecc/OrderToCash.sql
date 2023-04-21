@@ -145,7 +145,7 @@ SELECT
     'NotOTIF') AS OTIF,
 
   /*FillRate*/
-  (SalesOrders.ConfirmedOrderQuantity_BMENG / SalesOrders.CumulativeOrderQuantity_KWMENG ) * 100 AS FillRatePercent,
+  SAFE_DIVIDE(SalesOrders.ConfirmedOrderQuantity_BMENG, SalesOrders.CumulativeOrderQuantity_KWMENG ) * 100 AS FillRatePercent,
 
   /* BackOrder*/
   IF(SalesOrders.CumulativeOrderQuantity_KWMENG > SalesOrders.ConfirmedOrderQuantity_BMENG,
