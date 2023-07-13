@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.POScheduleLine`
-OPTIONS(
-  description = "Purchase Order Schedule Line"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/POScheduleLine.sql' -%}
 {% endif -%}

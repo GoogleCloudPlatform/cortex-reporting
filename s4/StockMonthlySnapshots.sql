@@ -87,14 +87,14 @@ WITH
           (StockMonthlySnapshots.total_monthly_movement_quantity * -1), 0)
       ) AS TotalConsumptionQuantity
     FROM
-      `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.stock_monthly_snapshots` AS StockMonthlySnapshots
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.stock_monthly_snapshots` AS StockMonthlySnapshots
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockCharacteristicsConfig` AS StockCharacteristicsConfig
       ON StockMonthlySnapshots.mandt = StockCharacteristicsConfig.Client_MANDT
         AND StockMonthlySnapshots.sobkz = StockCharacteristicsConfig.SpecialStockIndicator_SOBKZ
         AND StockMonthlySnapshots.bstaus_sg = StockCharacteristicsConfig.StockCharacteristic_BSTAUS_SG
     LEFT JOIN
-      `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
       ON
         StockMonthlySnapshots.WAERS = currency_decimal.CURRKEY
     LEFT JOIN

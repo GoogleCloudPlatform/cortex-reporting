@@ -549,9 +549,9 @@ LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.prps` AS PRPS
 -- Example of impacted currencies JPY, IDR, KRW, TWD
 -- Example of non-impacted currencies USD, GBP, EUR
 -- Example 1,000 JPY will appear as 10.00 JPY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS TCURX_WAER
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS TCURX_WAER
   ON RBKP.waers = TCURX_WAER.currkey
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
   ON CalendarDateDimension_BUDAT.Date = RBKP.budat
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
   ON CalendarDateDimension_BLDAT.Date = RBKP.bldat

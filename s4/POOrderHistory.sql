@@ -111,20 +111,20 @@ INNER JOIN
   ON PO.Client_MANDT = ekbe.MANDT
     AND PO.DocumentNumber_EBELN = ekbe.EBELN
     AND PO.Item_EBELP = ekbe.EBELP
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON PO.CurrencyKey_WAERS = currency_decimal.CURRKEY
 --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
 -- LEFT JOIN
---   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 --   ON PO.Client_MANDT = currency_conversion.MANDT
 --     AND PO.CurrencyKey_WAERS = currency_conversion.FCURR
 --     AND PO.ChangeDate_AEDAT = currency_conversion.conv_date
 --     AND currency_conversion.TCURR {{ currency }}
 --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --     AND currency_conversion.KURST = 'M'
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
   ON CalendarDateDimension_BUDAT.Date = ekbe.BUDAT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
   ON CalendarDateDimension_BLDAT.Date = ekbe.BLDAT
 --vgabe='1' for Goods Receipt and vgabe='2' for Invoice Receipt
 WHERE ekbe.VGABE IN('1', '2')

@@ -1,5 +1,6 @@
+--DaysPayableOutstanding is language independent view.
 WITH AccountsPayableAgg AS (
-  ## CORTEX-CUSTOMER: Please consider materializing AccountsPayable or this CTE
+  --## CORTEX-CUSTOMER: Please consider materializing AccountsPayable or this CTE
   SELECT
     AccountsPayable.Client_MANDT,
     AccountsPayable.CompanyCode_BUKRS,
@@ -15,7 +16,7 @@ WITH AccountsPayableAgg AS (
     `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountsPayable` AS AccountsPayable
   WHERE
     AccountsPayable.Client_MANDT = '{{ mandt }}'
-      AND AccountsPayable.DocFiscPeriod <= AccountsPayable.KeyFiscPeriod
+    AND AccountsPayable.DocFiscPeriod <= AccountsPayable.KeyFiscPeriod
   GROUP BY
     AccountsPayable.Client_MANDT,
     AccountsPayable.CompanyCode_BUKRS,
@@ -25,6 +26,8 @@ WITH AccountsPayableAgg AS (
 ),
 
 InventoryMetricsAgg AS (
+  --This view is language dependent. However the final view is language indpendent. The where clause
+  --makes sure that language dependency is handled and the amount is aggregated at correct granularity.
   SELECT
     InventoryKeyMetrics.Client_MANDT,
     InventoryKeyMetrics.CompanyCode_BUKRS,
@@ -37,7 +40,8 @@ InventoryMetricsAgg AS (
     `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.InventoryKeyMetrics` AS InventoryKeyMetrics
   WHERE
     InventoryKeyMetrics.Client_MANDT = '{{ mandt }}'
-      AND InventoryKeyMetrics.LanguageKey_SPRAS {{ language }}
+    AND InventoryKeyMetrics.LanguageKey_SPRAS = (SELECT ANY_VALUE(LanguageKey_SPRAS)
+      FROM `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.InventoryKeyMetrics`)
   GROUP BY
     InventoryKeyMetrics.Client_MANDT,
     InventoryKeyMetrics.CompanyCode_BUKRS,

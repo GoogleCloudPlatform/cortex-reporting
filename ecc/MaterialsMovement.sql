@@ -50,7 +50,7 @@ SELECT
   CalendarDateDim_BUDAT_MKPF.CalMonth AS MonthOfPostingDate_BUDAT_MKPF,
   CalendarDateDim_BUDAT_MKPF.CalWeek AS WeekOfPostingDate_BUDAT_MKPF,
   CalendarDateDim_BUDAT_MKPF.CalQuarter AS QuarterOfPostingDate_BUDAT_MKPF,
-  CalendarDateDim_BUDAT_MKPF.WeekEndDate AS WeekEndDateOfPostingDate_BUDAT_MKPF,
+  CAST(FORMAT_DATE('%Y%m%d', CalendarDateDim_BUDAT_MKPF.WeekEndDate) AS INT64) AS WeekEndDateOfPostingDate_BUDAT_MKPF,
   --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
   -- currency_conversion.UKURS AS ExchangeRate_UKURS,
   -- currency_conversion.TCURR AS TargetCurrency_TCURR,
@@ -223,16 +223,16 @@ SELECT
   COALESCE(mseg.DMBTR * currency_decimal.CURRFIX, mseg.DMBTR) AS AmountInLocalCurrency_DMBTR
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.mseg` AS mseg
 --Fix the decimal place of amounts for non-decimal-based currencies such as JPY, IDR, KRW, TWD etc.
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON mseg.WAERS = currency_decimal.CURRKEY
 --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
 -- LEFT JOIN
---     `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+--     `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 --     ON mseg.MANDT = currency_conversion.MANDT
 --       AND mseg.WAERS = currency_conversion.FCURR
 --       AND mseg.BUDAT_MKPF = currency_conversion.conv_date
 --       AND currency_conversion.TCURR {{ currency }}
 --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --       AND currency_conversion.KURST = 'M'
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDim_BUDAT_MKPF
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDim_BUDAT_MKPF
   ON mseg.BUDAT_MKPF = CalendarDateDim_BUDAT_MKPF.Date

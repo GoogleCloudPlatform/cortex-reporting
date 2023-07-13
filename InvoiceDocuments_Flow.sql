@@ -12,11 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-CREATE OR REPLACE TABLE `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.InvoiceDocuments_Flow`
-OPTIONS(
-  description = "Incoming Invoice (Invoice Receipt) Header, Item, & Account Assignment."
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 ({% include './ecc/InvoiceDocuments_Flow.sql' -%})
 {% endif -%}
@@ -28,5 +23,4 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 ({% include './s4/InvoiceDocuments_Flow.sql' -%})
 {% endif -%}
-;
 

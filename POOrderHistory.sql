@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.POOrderHistory`
-OPTIONS(
-  description = "Purchase Documents - Order History"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/POOrderHistory.sql' -%}
 {% endif -%}

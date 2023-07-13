@@ -12,11 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.OrderToCash`
-OPTIONS(
-description = "Order to Cash Reporting"
-)
-AS
 {% if sql_flavour == 'ecc' -%}
 ({% include './ecc/OrderToCash.sql' -%})
 {% endif -%}
@@ -24,5 +19,4 @@ AS
 {% if sql_flavour == 's4' -%}
 ({% include './s4/OrderToCash.sql' -%})
 {% endif -%}
-;
 

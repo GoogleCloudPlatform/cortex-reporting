@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.UoMUsage_SAMPLE`
-OPTIONS(
-  description = "Sample view using the UoMConversionUtil view"
-)
-AS
 {% if sql_flavour == 'ecc' -%}
 {% include './ecc/UoMUsage_SAMPLE.sql' -%}
 {% endif -%}
@@ -25,4 +20,3 @@ AS
 {% if sql_flavour == 's4' -%}
 {% include './s4/UoMUsage_SAMPLE.sql' -%}
 {% endif -%}
-;

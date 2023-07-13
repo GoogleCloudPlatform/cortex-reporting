@@ -46,7 +46,9 @@ SELECT
   CSKT.SPRAS AS Language_SPRAS, CSKT.KTEXT AS GeneralName_KTEXT,
   CSKT.LTEXT AS Description_LTEXT, CSKT.MCTXT AS SearchTermForMatchcodeUse_MCTXT
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.csks` AS CSKS
-INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.cskt` AS CSKT ON CSKS.MANDT = CSKT.MANDT AND CSKS.KOKRS = CSKT.KOKRS
+INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.cskt` AS CSKT
+  ON CSKS.MANDT = CSKT.mandt
+  AND CSKS.KOKRS = CSKT.KOKRS
+  AND CSKS.KOSTL = CSKT.KOSTL
 WHERE cast(CSKS.DATAB AS STRING) <= concat( cast(extract( YEAR FROM current_date())AS STRING), cast(extract( MONTH FROM current_date())AS STRING), cast(extract( DAY FROM current_date())AS STRING) )
   AND cast(CSKS.DATBI AS STRING) >= concat( cast(extract( YEAR FROM current_date())AS STRING), cast(extract( MONTH FROM current_date())AS STRING), cast(extract( DAY FROM current_date())AS STRING) )
-  

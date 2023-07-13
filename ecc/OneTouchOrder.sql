@@ -1,3 +1,6 @@
+ --## CORTEX-CUSTOMER: Remove this view from reporting_settings_ecc.yaml
+ -- if a RAW dataset with history of the table is not available.
+ -- Alternatively, replace with replicated CDPOS table.
 SELECT DISTINCT
   OneTouchOrder.VBAPClient_MANDT,
   OneTouchOrder.VBAPSalesDocument_VBELN,

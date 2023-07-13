@@ -51,7 +51,7 @@ SELECT
   CalendarDateDim_BUDAT.CalMonth AS MonthOfPostingDate_BUDAT,
   CalendarDateDim_BUDAT.CalWeek AS WeekOfPostingDate_BUDAT,
   CalendarDateDim_BUDAT.CalQuarter AS QuarterOfPostingDate_BUDAT,
-  CalendarDateDim_BUDAT.WeekEndDate AS WeekEndDateOfPostingDate_BUDAT,
+  CAST(FORMAT_DATE('%Y%m%d', CalendarDateDim_BUDAT.WeekEndDate) AS INT64) AS WeekEndDateOfPostingDate_BUDAT_MKPF,
  --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
   -- currency_conversion.UKURS AS ExchangeRate_UKURS,
   -- currency_conversion.TCURR AS TargetCurrency_TCURR,
@@ -339,16 +339,16 @@ SELECT
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.matdoc` AS matdoc
 --Fix the decimal place of amounts for non-decimal-based currencies such as JPY, IDR, KRW, TWD etc.
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON matdoc.WAERS = currency_decimal.CURRKEY
 --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
 -- LEFT JOIN
---     `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--     `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 --     ON matdoc.MANDT = currency_conversion.MANDT
 --       AND matdoc.WAERS = currency_conversion.FCURR
 --       AND matdoc.BUDAT = currency_conversion.conv_date
 --       AND currency_conversion.TCURR {{ currency }}
 --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --       AND currency_conversion.KURST = 'M'
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDim_BUDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDim_BUDAT
   ON matdoc.budat = CalendarDateDim_BUDAT.Date

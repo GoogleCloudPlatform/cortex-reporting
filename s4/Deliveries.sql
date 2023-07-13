@@ -509,18 +509,18 @@ INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.likp` AS LIKP
   ON
     LIKP.VBELN = LIPS.VBELN
     AND LIKP.MANDT = LIPS.MANDT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON LIKP.WAERK = currency_decimal.CURRKEY
 -- ##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
 -- LEFT JOIN
---   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 --   ON LIKP.MANDT = currency_conversion.MANDT
 --     AND LIKP.WAERK = currency_conversion.FCURR
 --     AND LIKP.LFDAT = currency_conversion.conv_date
 --     AND currency_conversion.TCURR {{ currency }}
 -- ##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --     AND currency_conversion.KURST = 'M'
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_LFDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_LFDAT
   ON CalendarDateDimension_LFDAT.Date = LIKP.LFDAT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_PODAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_PODAT
   ON CalendarDateDimension_PODAT.Date = LIKP.PODAT

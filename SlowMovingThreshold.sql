@@ -12,38 +12,9 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-{% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
-
-CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.slow_moving_threshold`
+CREATE TABLE IF NOT EXISTS `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SlowMovingThreshold`
 (
-mandt STRING,
-mtart STRING,
-threshold_value NUMERIC
+  Client_MANDT STRING,
+  MaterialType_MTART STRING,
+  ThresholdValue NUMERIC
 );
-
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SlowMovingThreshold`
-OPTIONS(
-description = "Slow Moving Threshold"
-)
-AS
-{% include './ecc/SlowMovingThreshold.sql' -%}
-;
-{% endif -%}
-
-{% if sql_flavour == 's4' or sql_flavour == 'union' -%}
-
-CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.slow_moving_threshold`
-(
-mandt STRING,
-mtart STRING,
-threshold_value NUMERIC
-);
-
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SlowMovingThreshold`
-OPTIONS(
-description = "Slow Moving Threshold"
-)
-AS
-{% include './s4/SlowMovingThreshold.sql' -%}
-;
-{% endif -%}

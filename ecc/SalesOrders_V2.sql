@@ -334,19 +334,19 @@ FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbak` AS vbak
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.vbap` AS vbap
   ON vbak.VBELN = vbap.VBELN
     AND vbak.MANDT = vbap.MANDT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS tcurx_vbak
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS tcurx_vbak
   ON vbak.WAERK = tcurx_vbak.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS tcurx_vbap
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS tcurx_vbap
   ON vbap.WAERK = tcurx_vbap.CURRKEY
 --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
--- LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+-- LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 --   ON vbak.MANDT = currency_conversion.MANDT
 --     AND vbak.WAERK = currency_conversion.FCURR
 --     AND vbak.ERDAT = currency_conversion.conv_date
 --     AND currency_conversion.TCURR {{ currency }}
 --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --     AND currency_conversion.KURST = 'M'
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_ERDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_ERDAT
   ON CalendarDateDimension_ERDAT.Date = vbak.ERDAT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_VDATU
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_VDATU
   ON CalendarDateDimension_VDATU.Date = vbak.VDATU

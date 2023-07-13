@@ -83,7 +83,7 @@ SELECT
   CalendarDateDimension_BEDAT.CalQuarter AS QuarterOfOrderDateOfScheduleLine_BEDAT
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.eket` AS eket
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_EINDT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_EINDT
   ON CalendarDateDimension_EINDT.Date = eket.EINDT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_BEDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BEDAT
   ON CalendarDateDimension_BEDAT.Date = eket.BEDAT

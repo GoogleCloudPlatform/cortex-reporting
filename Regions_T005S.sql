@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Regions_T005S`
-OPTIONS(
-description = "Regions (T005S)"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/Regions_T005S.sql' -%}
 {% endif -%}

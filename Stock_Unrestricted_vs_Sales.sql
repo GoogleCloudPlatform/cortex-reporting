@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Stock_Unrestricted_vs_Sales`
-OPTIONS(
-  description = "Non-valuated unrestricted stock levels versus sales orders and deliveries"
-)
-AS
 {% if sql_flavour == 'ecc' -%}
 ({% include './ecc/Stock_Unrestricted_vs_Sales.sql' -%})
 {% endif -%}
@@ -25,4 +20,3 @@ AS
 {% if sql_flavour == 's4' -%}
 ({% include './s4/Stock_Unrestricted_vs_Sales.sql' -%})
 {% endif -%}
-;

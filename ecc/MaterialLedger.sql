@@ -23,7 +23,7 @@ LEFT JOIN
   ON t001.MANDT = t001k.MANDT
     AND t001.BUKRS = t001k.BUKRS
 LEFT JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON t001.WAERS = currency_decimal.CURRKEY
 UNION ALL
 SELECT
@@ -50,5 +50,5 @@ LEFT JOIN
   ON t001.MANDT = t001k.MANDT
     AND t001.BUKRS = t001k.BUKRS
 LEFT JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON t001.WAERS = currency_decimal.CURRKEY

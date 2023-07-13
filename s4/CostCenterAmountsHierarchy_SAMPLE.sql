@@ -1,9 +1,8 @@
 SELECT h.parent AS ParentHierarchy, h.child AS ChildHierarchy,
   ht.descript AS Description, pmd.CostCenter_KOSTL, pmd.Description_LTEXT,
   b.AmountInLocalCurrency_DMBTR, b.AmountInDocumentCurrency_WRBTR
--- cepc_hier is created as part of the hierarchy flattening of cost centers during CDC deployment 
--- or as part of the deployment of this sample so deployment does not fail
-FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.csks_hier` AS h
+-- cepc_hier is created as part of the hierarchy flattening of cost centers
+FROM `{{ project_id_src }}.{{ dataset_reporting_tgt }}.csks_hier` AS h
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.setheadert` AS ht
   ON h.mandt = ht.mandt
     AND h.child_org = ht.subclass

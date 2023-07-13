@@ -12,11 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.VendorPerformanceOverview`
-OPTIONS(
-description = "Vendor Performance - Summary"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/VendorPerformanceOverview.sql' -%}
 {% endif -%}

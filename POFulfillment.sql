@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.POFulfillment`
-OPTIONS(
-  description = "Deliveries completed and pending per Purchase Order Item"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/POFulfillment.sql' -%}
 {% endif -%}

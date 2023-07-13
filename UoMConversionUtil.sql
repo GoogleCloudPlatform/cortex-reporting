@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.UoMConversionUtil`
-OPTIONS(
-  description = "View to convert UoM when conversion needs to be inline and table function canot be used. See UoMUsage_SAMPLE."
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/UoMConversionUtil.sql' -%}
 {% endif -%}

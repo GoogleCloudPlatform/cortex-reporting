@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.POVendorConfirmation`
-OPTIONS(
-  description = "Purchase Order Confirmations from Vendor"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/POVendorConfirmation.sql' -%}
 {% endif -%}

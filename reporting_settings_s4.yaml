@@ -17,9 +17,429 @@
 #
 #  At least one of the two sections need to be present.
 
-bq_dependent_objects:
-  - sql_file: SalesOrderDetails_SAMPLE.sql
+# The following files will be deployed in parallel
+bq_independent_objects:
+
+  - sql_file: NetDueDateCalc.sql
+    type: script
+
+  - sql_file: CurrencyConversion.sql
     type: view
+
+  - sql_file: fiscal_period.sql
+    type: script
+
+  - sql_file: fiscal_case1.sql
+    type: script
+
+  - sql_file: fiscal_case2.sql
+    type: script
+
+  - sql_file: fiscal_case3.sql
+    type: script
+
+  - sql_file: currency_decimal.sql
+    type: script
+
+  - sql_file: currency_conversion.sql
+    type: script
+
+  - sql_file: AddressesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: PlantsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: MaterialGroupsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@monthly"
+
+  - sql_file: GLAccountsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: VendorsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: LedgersMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: DistributionChannelsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@monthly"
+
+  - sql_file: CompaniesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: DeliveryBlockingReasonsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: BillingBlockingReasonsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: ProductHierarchy_Flatten.sql
+    type: view
+
+  - sql_file: TelephoneCodes_T005K.sql
+    type: view
+
+  - sql_file: CostCentersMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@monthly"
+
+  - sql_file: SalesOrganizationsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: StorageLocationsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: ValuationAreasMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+# Run every 10 minutes
+  - sql_file: SalesOrders.sql
+    type: table
+    table_setting:
+      load_frequency: "*/10 * * * *"
+
+  - sql_file: Regions_T005S.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: SDDocumentFlow.sql
+    type: view
+
+  - sql_file: UoMConversion.sql
+    type: script
+
+  - sql_file: UoMConversionUtil.sql
+    type: view
+
+  - sql_file: ProductHierarchiesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: CustomersMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: Languages_T002.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: MaterialsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: MaterialTypesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: BillOfMaterialsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: CurrenciesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: CurrencyConvUtil.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: ProfitCentersMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: ProductionOrders.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: CountriesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+
+  - sql_file: UoMMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: PurchaseDocuments_Flow.sql
+    type: view
+
+  - sql_file: DivisionsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: PurchaseDocumentTypesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: MaterialMovementTypesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: ReasonForMovementTypesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: SpecialStocksMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: PurchasingOrganizationsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: BatchesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: MaterialPlantsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: PurchasingGroupsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@yearly"
+
+  - sql_file: PricingConditions.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesOrderStatus.sql
+    type: table
+    table_setting:
+      load_frequency: "*/10 * * * *"
+
+  - sql_file: POScheduleLine.sql
+    type: view
+
+  - sql_file: MaterialsBatchMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: StockCharacteristicsConfig.sql
+    type: script
+
+  - sql_file: StockInHand.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: OneTouchOrder.sql
+    type: view
+
+bq_dependent_objects:
+
+  - sql_file: BusinessPartnersMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: PurchaseDocuments.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: PurchaseDocumentsHistory.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: InvoiceDocuments_Flow.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: MaterialsValuation.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: MaterialsMovement.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: DueDateForCashDiscount1.sql
+    type: script
+
+  - sql_file: DueDateForCashDiscount2.sql
+    type: script
+
+  - sql_file: AccountingDocuments.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: AccountingDocumentsReceivable.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: POVendorConfirmation.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: POOrderHistory.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: Deliveries.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesOrders_V2.sql
+    type: table
+    table_setting:
+      load_frequency: "*/10 * * * *"
+
+  - sql_file: SDStatus_Items.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: DeliveriesStatus_PerSalesOrg.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesStatus_Items.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: POSchedule.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: POFulfillment.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesFulfillment_perOrder.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesFulfillment.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: Stock_NonValuated.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: Stock_PerPlant.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: Stock_Unrestricted_vs_Sales.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: Billing.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: OrderToCash.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesOrderHeaderStatus.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesOrderScheduleLine.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesOrderPartnerFunction.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: VendorConfig.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: MaterialLedger.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesOrderPricing.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: StockWeeklySnapshots.sql
+    type: script
+
+  - sql_file: StockMonthlySnapshots.sql
+    type: script
 
   - sql_file: InventoryKeyMetrics.sql
     type: table

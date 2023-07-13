@@ -18,7 +18,208 @@
 #  At least one of the two sections need to be present.
 ## UNION is an experimental feature. We would like to understand usage by customers.
 ## Please raise an issue or send us a message if you are using it. Thank you!
-bq_dependent_objects:
-  - sql_file: SalesOrderDetails_SAMPLE.sql
+
+# The following files will be deployed in parallel
+bq_independent_objects:
+
+  - sql_file: NetDueDateCalc.sql
+    type: script
+
+  - sql_file: Billing.sql
     type: view
+
+  - sql_file: AddressesMD.sql
+    type: view
+
+  - sql_file: PlantsMD.sql
+    type: view
+
+  - sql_file: CurrencyConversion.sql
+    type: view
+
+  - sql_file: MaterialGroupsMD.sql
+    type: view
+
+  - sql_file: GLAccountsMD.sql
+    type: view
+
+  - sql_file: VendorsMD.sql
+    type: view
+
+  - sql_file: LedgersMD.sql
+    type: view
+
+  - sql_file: DistributionChannelsMD.sql
+    type: view
+
+  - sql_file: CompaniesMD.sql
+    type: view
+
+  - sql_file: TelephoneCodes_T005K.sql
+    type: view
+
+  - sql_file: CostCentersMD.sql
+    type: view
+
+  - sql_file: SalesOrganizationsMD.sql
+    type: view
+
+  - sql_file: ValuationAreasMD.sql
+    type: view
+
+  - sql_file: Regions_T005S.sql
+    type: view
+
+  - sql_file: RegionsMD.sql
+    type: view
+
+  - sql_file: ProductHierarchiesMD.sql
+    type: view
+
+  - sql_file: Languages_T002.sql
+    type: view
+
+  - sql_file: DeliveryBlockingReasonsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: BillingBlockingReasonsMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: MaterialsMD.sql
+    type: view
+
+  - sql_file: MaterialTypesMD.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: BillOfMaterialsMD.sql
+    type: view
+
+  - sql_file: CurrenciesMD.sql
+    type: view
+
+  - sql_file: ProfitCentersMD.sql
+    type: view
+
+  - sql_file: ProductionOrders.sql
+    type: view
+
+  - sql_file: CountriesMD.sql
+    type: view
+
+  - sql_file: UoMMD.sql
+    type: view
+
+  - sql_file: DivisionsMD.sql
+    type: view
+
+  - sql_file: CustomersMD.sql
+    type: view
+
+  - sql_file: POSchedule.sql
+    type: view
+
+  - sql_file: ProductHierarchy_Flatten.sql
+    type: view
+
+  - sql_file: UoMConversionUtil.sql
+    type: view
+
+  - sql_file: PurchaseDocuments.sql
+    type: view
+
+  - sql_file: PurchaseDocuments_Flow.sql
+    type: view
+
+  - sql_file: SalesOrders.sql
+    type: view
+
+  - sql_file: CurrencyConvUtil.sql
+    type: view
+
+  - sql_file: UoMConversion.sql
+    type: script
+
+  - sql_file: Deliveries.sql
+    type: view
+
+  - sql_file: SalesOrders_V2.sql
+    type: view
+
+  - sql_file: SDDocumentFlow.sql
+    type: view
+
+  - sql_file: SDStatus_Items.sql
+    type: view
+
+  - sql_file: InvoiceDocuments_Flow.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesOrderStatus.sql
+    type: view
+
+  - sql_file: POScheduleLine.sql
+    type: view
+
+
+bq_dependent_objects:
+
+  - sql_file: DueDateForCashDiscount1.sql
+    type: script
+
+  - sql_file: DueDateForCashDiscount2.sql
+    type: script
+
+  - sql_file: currency_decimal.sql
+    type: script
+
+  - sql_file: currency_conversion.sql
+    type: script
+
+  - sql_file: Stock_NonValuated.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: Stock_PerPlant.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: POFulfillment.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: POOrderHistory.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: POVendorConfirmation.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: AccountingDocuments.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: DeliveriesStatus_PerSalesOrg.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+
+  - sql_file: SalesStatus_Items.sql
+    type: table
+    table_setting:
+      load_frequency: "@daily"
 

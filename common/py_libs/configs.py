@@ -17,91 +17,13 @@
 import json
 import logging
 from pathlib import Path
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
 
-def _validate_config(config):
-    """Validates configurations.
-
-    Args:
-        config: Dictionary of config as read from a config file.
-
-    Raises:
-      ValueError: If config is missing a required value.
-    """
-
-    # NOTE: Every new workstream will need it's own set of validations here.
-
-    logger.debug("Validating config...")
-
-    if config is None:
-        raise ValueError("Config is empty.")
-
-    # Make sure all the other needed top level configs are in place.
-    missing_attr = []
-    for attr in ("testData", "generateExtraData", "deployCDC", "deploySAP",
-                 "deploySFDC", "turboMode", "projectIdSource",
-                 "projectIdTarget", "location", "languages", "currencies",
-                 "SFDC"):
-        if config.get(attr) is None or config.get(attr) == "":
-            missing_attr.append(attr)
-
-    if missing_attr:
-        raise ValueError("Config file is missing needed attributes or "
-                         f"has empty value: {missing_attr}")
-
-    # Check Workstream specific configurations.
-
-    # SAP
-    deploy_sap = config.get("deploySAP")
-    if deploy_sap is True or deploy_sap == 'true':
-        sap_attr = config.get("SAP")
-        if sap_attr is None:
-            raise ValueError("Config file is missing 'SAP' attribute.")
-
-        sap_datasets = sap_attr.get("datasets")
-        if sap_datasets is None:
-            raise ValueError("Config file is missing 'SAP.datasets' attribute.")
-
-        missing_datasets_attr = []
-        if sap_attr.get("SQLFlavor") != 'union':
-            for attr in ("cdc", "raw", "reporting", "ml"):
-                if sap_datasets.get(attr) is None or sap_datasets.get(attr) == "":
-                    missing_datasets_attr.append(attr)
-
-        if missing_datasets_attr:
-            raise ValueError(
-                "Config file is missing or has empty value for one or more "
-                f"SAP datasets attributes: {missing_datasets_attr} ")
-
-    # SFDC
-    deploy_sfdc = config.get("deploySFDC")
-    if deploy_sfdc is True or deploy_sfdc == 'true':
-        sfdc_attr = config.get("SFDC")
-        if sfdc_attr is None:
-            raise ValueError("Config file is missing 'SFDC' attribute.")
-
-        sfdc_datasets = sfdc_attr.get("datasets")
-        if sfdc_datasets is None:
-            raise ValueError(
-                "Config file is missing 'SFDC.datasets' attribute.")
-
-        missing_datasets_attr = []
-        for attr in ("cdc", "raw", "reporting"):
-            if sfdc_datasets.get(attr) is None or sfdc_datasets.get(attr) == "":
-                missing_datasets_attr.append(attr)
-
-        if missing_datasets_attr:
-            raise ValueError(
-                "Config file is missing or has empty value for one or more "
-                f"SFDC datasets attributes: {missing_datasets_attr} ")
-
-    logger.info("Config file validated and is looking good. 🦄👍")
-
-
-def load_config_file(config_file):
-    """Loads a json config file to a dictionary and validates it.
+def load_config_file(config_file) -> Dict[str, Any]:
+    """Loads a json config file to a dictionary.
 
     Args:
         config_file: Path of config json file.
@@ -123,7 +45,5 @@ def load_config_file(config_file):
 
         logger.info("Using the following config:\n %s",
                     json.dumps(config, indent=4))
-
-        _validate_config(config)
 
     return config

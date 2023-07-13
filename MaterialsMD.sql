@@ -13,11 +13,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialsMD`
-OPTIONS(
-description="Materials Master Data"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/MaterialsMD.sql' -%}
 {% endif -%}
@@ -29,5 +24,4 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/MaterialsMD.sql' -%}
 {% endif -%}
-;
 

@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.ProductHierarchiesMD`
-OPTIONS(
-  description = "Product Hierarchies Master Data"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/ProductHierarchiesMD.sql' -%}
 {% endif -%}

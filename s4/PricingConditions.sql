@@ -86,12 +86,12 @@ SELECT
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.prcd_elements` AS prcd_elements
 LEFT JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON
     COALESCE(prcd_elements.WAERS, '') = currency_decimal.CURRKEY
 --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
 -- LEFT JOIN
---   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_conversion` AS currency_conversion
+--   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 -- ON
 --   prcd_elements.MANDT = currency_conversion.MANDT
 --   AND COALESCE(prcd_elements.WAERS, '') = currency_conversion.FCURR
@@ -100,6 +100,6 @@ LEFT JOIN
 --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --   AND currency_conversion.KURST = 'M'
 LEFT JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_KDATU
+  `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_KDATU
   ON
     CalendarDateDimension_KDATU.Date = PARSE_DATE('%Y%m%d', SUBSTRING(prcd_elements.KDATU, 1, 8))

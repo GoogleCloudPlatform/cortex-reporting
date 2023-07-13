@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.PurchaseDocuments_Flow`
-OPTIONS(
-  description = "Purchase Documents Header, Items, & Account Assignment. Primary key of this table is [Client_MANDT, DocumentNumber_EBELN, Item_EBELP, & AccountAssignment_ZEKKN]"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/PurchaseDocuments_Flow.sql' -%}
 {% endif -%}

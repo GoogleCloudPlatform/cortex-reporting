@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SalesOrganizationsMD`
-OPTIONS(
-description = "Sales Organization"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/SalesOrganizationsMD.sql' %}
 {% endif -%}
@@ -29,5 +24,4 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/SalesOrganizationsMD.sql' %}
 {% endif -%}
-;
 

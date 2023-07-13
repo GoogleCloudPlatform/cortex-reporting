@@ -12,11 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.AccountingDocumentsReceivable`
-OPTIONS(
-description = " AR Accounting Documents Reporting "
-)
-AS
 {% if sql_flavour == 'ecc' -%}
 {% include './ecc/AccountingDocumentsReceivable.sql' -%}
 {% endif -%}
@@ -25,5 +20,4 @@ AS
 {% if sql_flavour == 's4' -%}
 {% include './s4/AccountingDocumentsReceivable.sql' -%}
 {% endif -%}
-;
 

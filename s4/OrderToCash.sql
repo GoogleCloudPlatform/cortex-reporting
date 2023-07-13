@@ -85,6 +85,8 @@ SELECT
   SalesOrganizationsMD.SalesOrgName_VTEXT AS SalesOrganizationName,
   DistributionChannelMD.DistributionChannelName_VTEXT AS DistributionChannelName,
   CountriesMD.CountryName_LANDX AS RegionDescription,
+ --## CORTEX-CUSTOMER: Remove references to OneTouchOrder
+ -- if not using the view
   OneTouchOrder.OneTouchOrderCount AS OneTouchOrderCount,
   OneTouchOrder.VBAPSalesDocument_VBELN AS OneTouchOrders,
   DivisionsMD.DivisionName_VTEXT AS DivisionDescription,
@@ -224,6 +226,8 @@ LEFT JOIN
     SalesOrders.Client_MANDT = CountriesMD.Client_MANDT
     AND CustomersMD.CountryKey_LAND1 = CountriesMD.CountryKey_LAND1
     AND CountriesMD.Language_SPRAS = MaterialsMD.Language_SPRAS
+ --## CORTEX-CUSTOMER: Remove references to OneTouchOrder
+ -- if not using the view
 LEFT JOIN
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.OneTouchOrder` AS OneTouchOrder
   ON

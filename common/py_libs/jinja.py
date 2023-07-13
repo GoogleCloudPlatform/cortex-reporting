@@ -46,3 +46,99 @@ def apply_jinja_params_to_file(input_file: str, jinja_data_file: str) -> str:
     logger.debug("Rendered text = \n%s", output_text)
 
     return output_text
+
+
+def initialize_jinja_from_config(config_dict: dict) -> dict:
+    """Generates jinja parameters dictionary from configuration."""
+
+    jinja_data_file_dict = {
+        "project_id_src": config_dict["projectIdSource"],
+        "project_id_tgt": config_dict["projectIdTarget"],
+        "location": config_dict["location"],
+        "k9_datasets_processing": config_dict["k9"]["datasets"]["processing"],
+        "k9_datasets_reporting": config_dict["k9"]["datasets"]["reporting"],
+    }
+    # SFDC
+    if config_dict.get("deploySFDC"):
+        jinja_data_file_dict.update({
+            "sfdc_datasets_raw":
+                config_dict["SFDC"]["datasets"]["raw"],
+            "sfdc_datasets_cdc":
+                config_dict["SFDC"]["datasets"]["cdc"],
+            "sfdc_datasets_reporting":
+                config_dict["SFDC"]["datasets"]["reporting"],
+            "currencies":
+                ",".join(
+                    f"'{currency}'" for currency in config_dict["currencies"]),
+            "languages":
+                ",".join(
+                    f"'{language}'" for language in config_dict["languages"])
+        })
+    # SAP
+    if config_dict.get("deploySAP"):
+        jinja_data_file_dict.update({
+            # raw datasets
+            "dataset_raw_landing":
+                config_dict["SAP"]["datasets"]["raw"],
+            "dataset_raw_landing_ecc":
+                config_dict["SAP"]["datasets"]["rawECC"],
+            "dataset_raw_landing_s4":
+                config_dict["SAP"]["datasets"]["rawS4"],
+            # cdc datasets
+            "dataset_cdc_processed":
+                config_dict["SAP"]["datasets"]["cdc"],
+            "dataset_cdc_processed_ecc":
+                config_dict["SAP"]["datasets"]["cdcECC"],
+            "dataset_cdc_processed_s4":
+                config_dict["SAP"]["datasets"]["cdcS4"],
+            # reporting datasets
+            "dataset_reporting_tgt":
+                config_dict["SAP"]["datasets"]["reporting"],
+            # mandt
+            "mandt":
+                config_dict["SAP"]["mandt"],
+            "mandt_ecc":
+                config_dict["SAP"]["mandtECC"],
+            "mandt_s4":
+                config_dict["SAP"]["mandtS4"],
+            # Misc
+            # We only use lowercase SQLFlavor in our templates
+            "sql_flavor":
+                config_dict["SAP"]["SQLFlavor"].lower(),
+            "sql_flavour":
+                config_dict["SAP"]["SQLFlavor"].lower(),
+            # TODO: Update SAP sql to use currency jinja variable in a
+            # readable way - e.g. "IN {{ currencies }}"
+            "currency":
+                "IN (" + ",".join(
+                    f"'{currency}'" for currency in config_dict["currencies"]) +
+                ")",
+            "language":
+                "IN (" + ",".join(
+                    f"'{language}'" for language in config_dict["languages"]) +
+                ")"
+        })
+    if config_dict.get("deployMarketing"):
+        # GoogleAds
+        if config_dict["marketing"].get("deployGoogleAds"):
+            jinja_data_file_dict.update({
+                "marketing_googleads_datasets_raw":
+                    config_dict["marketing"]["GoogleAds"]["datasets"]["raw"],
+                "marketing_googleads_datasets_cdc":
+                    config_dict["marketing"]["GoogleAds"]["datasets"]["cdc"],
+                "marketing_googleads_datasets_reporting":
+                    config_dict["marketing"]["GoogleAds"]["datasets"]
+                    ["reporting"]
+            })
+        # CM360
+        if config_dict["marketing"].get("deployCM360"):
+            jinja_data_file_dict.update({
+                "marketing_cm360_datasets_raw":
+                    config_dict["marketing"]["CM360"]["datasets"]["raw"],
+                "marketing_cm360_datasets_cdc":
+                    config_dict["marketing"]["CM360"]["datasets"]["cdc"],
+                "marketing_cm360_datasets_reporting":
+                    config_dict["marketing"]["CM360"]["datasets"]["reporting"]
+            })
+
+    return jinja_data_file_dict

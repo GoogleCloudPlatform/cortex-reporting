@@ -15,17 +15,22 @@
 """Library for CDC related functions."""
 
 import logging
+
 from google.cloud.exceptions import NotFound
 from google.cloud import bigquery
-from common.py_libs import bq_materializer
+from common.py_libs.bq_materializer import add_partition_to_table_def
+from common.py_libs.bq_materializer import add_cluster_to_table_def
 
 # Columns to be ignored for CDC tables
 _CDC_EXCLUDED_COLUMN_LIST = ["_PARTITIONTIME", "OperationalFlag", "IsDeleted"]
 
+logger = logging.getLogger(__name__)
 
-def create_cdc_table(bq_client, table_setting, cdc_project, cdc_dataset,
-                     schema):
-    """Creates CDC table using the provided schema.
+
+def create_cdc_table(bq_client: bigquery.Client, table_setting: dict,
+                     cdc_project: str, cdc_dataset: str,
+                     schema: list[tuple[str, str]]):
+    """Creates CDC table using the provided schema and table settings.
 
     Args:
         bq_client: BQ Client.
@@ -37,16 +42,14 @@ def create_cdc_table(bq_client, table_setting, cdc_project, cdc_dataset,
 
     base_table: str = table_setting["base_table"].lower()
     cdc_table_name = cdc_project + "." + cdc_dataset + "." + base_table
-    partition_details = table_setting.get("partition_details")
-    cluster_details = table_setting.get("cluster_details")
 
     try:
         _ = bq_client.get_table(cdc_table_name)
-        logging.warning("Table '%s' already exists. Not creating it again.",
-                        cdc_table_name)
+        logger.warning("Table '%s' already exists. Not creating it again.",
+                       cdc_table_name)
     except NotFound:
         # Let's create CDC table.
-        logging.info("Table '%s' does not exists. Creating it.", cdc_table_name)
+        logger.info("Table '%s' does not exists. Creating it.", cdc_table_name)
 
         target_schema = [
             bigquery.SchemaField(name=f[0], field_type=f[1]) for f in schema
@@ -57,17 +60,15 @@ def create_cdc_table(bq_client, table_setting, cdc_project, cdc_dataset,
         # Add clustering and partitioning properties if specified.
         partition_details = table_setting.get("partition_details")
         if partition_details:
-            cdc_table = bq_materializer.add_partition_to_table_def(
-                cdc_table, partition_details)
+            cdc_table = add_partition_to_table_def(cdc_table, partition_details)
 
         cluster_details = table_setting.get("cluster_details")
         if cluster_details:
-            cdc_table = bq_materializer.add_cluster_to_table_def(
-                cdc_table, cluster_details)
+            cdc_table = add_cluster_to_table_def(cdc_table, cluster_details)
 
         bq_client.create_table(cdc_table)
 
-        logging.info("Created table '%s'.", cdc_table_name)
+        logger.info("Created table '%s'.", cdc_table_name)
 
 
 def create_cdc_table_from_raw_table(bq_client, table_setting, raw_project,
@@ -92,11 +93,11 @@ def create_cdc_table_from_raw_table(bq_client, table_setting, raw_project,
 
     try:
         _ = bq_client.get_table(cdc_table_name)
-        logging.warning("Table '%s' already exists. Not creating it again.",
-                        cdc_table_name)
+        logger.warning("Table '%s' already exists. Not creating it again.",
+                       cdc_table_name)
     except NotFound:
         # Let's create CDC table.
-        logging.info("Table '%s' does not exists. Creating it.", cdc_table_name)
+        logger.info("Table '%s' does not exists. Creating it.", cdc_table_name)
         try:
             raw_table_schema = bq_client.get_table(raw_table_name).schema
         except NotFound:
@@ -113,14 +114,12 @@ def create_cdc_table_from_raw_table(bq_client, table_setting, raw_project,
         # Add clustering and partitioning properties if specified.
         partition_details = table_setting.get("partition_details")
         if partition_details:
-            cdc_table = bq_materializer.add_partition_to_table_def(
-                cdc_table, partition_details)
+            cdc_table = add_partition_to_table_def(cdc_table, partition_details)
 
         cluster_details = table_setting.get("cluster_details")
         if cluster_details:
-            cdc_table = bq_materializer.add_cluster_to_table_def(
-                cdc_table, cluster_details)
+            cdc_table = add_cluster_to_table_def(cdc_table, cluster_details)
 
         bq_client.create_table(cdc_table)
 
-        logging.info("Created table '%s'.", cdc_table_name)
+        logger.info("Created table '%s'.", cdc_table_name)

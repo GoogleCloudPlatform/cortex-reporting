@@ -89,6 +89,6 @@ SELECT
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.vbep` AS vbep
 LEFT JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_EDATU
+  `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_EDATU
   ON
     CalendarDateDimension_EDATU.Date = vbep.EDATU

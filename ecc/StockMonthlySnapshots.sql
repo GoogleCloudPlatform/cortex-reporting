@@ -87,7 +87,7 @@ WITH
           0)
       ) AS TotalConsumptionQuantity
     FROM
-      `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.stock_monthly_snapshots` AS StockMonthlySnapshots
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.stock_monthly_snapshots` AS StockMonthlySnapshots
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockCharacteristicsConfig` AS StockCharacteristicsConfig
       ON
@@ -97,7 +97,7 @@ WITH
         AND StockMonthlySnapshots.SOBKZ = StockCharacteristicsConfig.SpecialStockIndicator_SOBKZ
         AND StockMonthlySnapshots.INSMK = StockCharacteristicsConfig.StockType_INSMK
     LEFT JOIN
-      `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
       ON
         StockMonthlySnapshots.WAERS = currency_decimal.CURRKEY
     LEFT JOIN

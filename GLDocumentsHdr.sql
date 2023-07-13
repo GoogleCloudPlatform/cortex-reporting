@@ -11,11 +11,6 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.GLDocumentHdr`
-OPTIONS(
-  description = "GL Accounting Document Headers"
-)
-AS
 SELECT
   FAGLFLEXA.RCLNT AS Client_RCLNT, FAGLFLEXA.RYEAR AS FiscalYear_RYEAR,
   FAGLFLEXA.DOCNR AS AccountingDocumentNumber_DOCNR,

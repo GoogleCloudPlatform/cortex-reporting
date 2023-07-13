@@ -395,9 +395,9 @@ FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.ekpo` AS ekpo
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.ekko` AS ekko
   ON ekko.MANDT = ekpo.MANDT
     AND ekko.EBELN = ekpo.EBELN
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON ekko.WAERS = currency_decimal.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_AEDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_AEDAT
   ON CalendarDateDimension_AEDAT.Date = ekko.AEDAT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_BEDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BEDAT
   ON CalendarDateDimension_BEDAT.Date = ekko.BEDAT

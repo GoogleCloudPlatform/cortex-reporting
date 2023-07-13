@@ -13,38 +13,10 @@
 #-- limitations under the License.
 
 {% if sql_flavour == 'ecc' -%}
- CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.csks_hier` (
-  mandt STRING,
-  parent STRING,
-  parent_org STRING,
-  child STRING,
-  child_org STRING,
-  kostl STRING );
-
-
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CostCenterAmountsHierarchy_SAMPLE`
-OPTIONS(
-description = "Sample with cost centers and amount represented in flattened hierarchy"
-)
-AS
 ({% include './ecc/CostCenterAmountsHierarchy_SAMPLE.sql' -%})
 {% endif -%}
 
 {% if sql_flavour == 's4' -%}
-CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.csks_hier` (
-  mandt STRING,
-  parent STRING,
-  parent_org STRING,
-  child STRING,
-  child_org STRING,
-  kostl STRING );
-
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CostCenterAmountsHierarchy_SAMPLE`
-OPTIONS(
-description = " Sample with cost centers and amount represented in flattened hierarchy "
-)
-AS
 ({% include './s4/CostCenterAmountsHierarchy_SAMPLE.sql' -%})
 {% endif -%}
-;
 

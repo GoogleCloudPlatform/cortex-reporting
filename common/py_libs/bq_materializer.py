@@ -192,8 +192,12 @@ def validate_partition_details(partition_details):
                 "'integer_range_bucket' property.")
 
 
-def validate_materializer_setting(table_setting):
+def validate_table_setting(table_setting):
     """Makes sure the materializer setting for a table is valid."""
+
+    if not table_setting:
+        raise ValueError("Missing 'table_setting` section. This section is "
+                         "mandatory when BQ object type is 'table'.")
 
     logger.debug("table_settings :\n %s", table_setting)
 
@@ -201,10 +205,11 @@ def validate_materializer_setting(table_setting):
     if not load_frequency:
         raise ValueError("Missing 'load_frequency' property.")
 
-    if load_frequency not in _LOAD_FREQUENCIES:
-        raise ValueError(f"'load_frequency' has to be one of the following:"
-                         f"{_LOAD_FREQUENCIES}.\n"
-                         f"Specified 'load_frequency' is '{load_frequency}'.")
+    # TODO: add cron validation
+    # if load_frequency not in _LOAD_FREQUENCIES:
+    #     raise ValueError(f"'load_frequency' has to be one of the following:"
+    #                      f"{_LOAD_FREQUENCIES}.\n"
+    #                      f"Specified 'load_frequency' is '{load_frequency}'.")
 
     partition_details = table_setting.get("partition_details")
     cluster_details = table_setting.get("cluster_details")
@@ -216,35 +221,8 @@ def validate_materializer_setting(table_setting):
     if cluster_details:
         validate_cluster_details(cluster_details)
 
-
-def validate_materializer_settings(materializer_settings):
-    """Makes sure all materializer settings are valid."""
-
-    logger.info("Validating materializer settings ...")
-
-    logger.debug("materializer_settings = %s", materializer_settings)
-
-    tables_processed = set()
-
-    for table_setting in materializer_settings:
-        base_table = table_setting.get("base_table")
-        if not base_table:
-            raise ValueError("'base_table' property missing from an entry.")
-
-        logger.debug("  Checking setting for table '%s' ....", base_table)
-        validate_materializer_setting(table_setting)
-
-        # Check for duplicate entries.
-        if base_table in tables_processed:
-            raise ValueError(f"Table '{base_table}' is present multiple times.")
-        else:
-            tables_processed.add(base_table)
-
-    logger.info("Materializer settings look good...")
-
-
-def validate_reporting_materializer_setting(file_setting):
-    """Validates reporting materializer setting for a table."""
+def validate_file_setting(file_setting):
+    """Validates reporting materializer setting for a single SQL file."""
 
     logger.debug("file_settings :\n %s", file_setting)
 
@@ -258,7 +236,7 @@ def validate_reporting_materializer_setting(file_setting):
 
     if file_type == "table":
         table_setting = file_setting.get("table_setting")
-        validate_materializer_setting(table_setting)
+        validate_table_setting(table_setting)
         # Above validation allows for "runtime" frequency, which is not allowed
         # for reporting materializer. Let's do one additional check.
         load_frequency = table_setting.get("load_frequency")
@@ -266,12 +244,12 @@ def validate_reporting_materializer_setting(file_setting):
             raise ValueError("'load_frequency' can not be 'runtime'.")
 
 
-def validate_reporting_materializer_settings(materializer_settings):
-    """Validates all reporting materializer settings."""
+def validate_bq_materializer_settings(materializer_settings):
+    """Validates all BQ materializer settings."""
 
-    logger.info("Validating reporting materializer settings ...")
+    logger.info("Validating all BQ materializer settings ...")
 
-    logger.debug("reporting materializer_settings = %s", materializer_settings)
+    logger.debug("materializer_settings = %s", materializer_settings)
 
     files_processed = set()
 
@@ -281,7 +259,7 @@ def validate_reporting_materializer_settings(materializer_settings):
             raise ValueError("'sql_file' property missing from an entry.")
 
         logger.debug("  Checking setting for file '%s' ....", sql_file)
-        validate_reporting_materializer_setting(file_setting)
+        validate_file_setting(file_setting)
 
         # Check for duplicate entries.
         if sql_file in files_processed:
@@ -289,4 +267,4 @@ def validate_reporting_materializer_settings(materializer_settings):
         else:
             files_processed.add(sql_file)
 
-    logger.info("Reporting materializer settings look good...")
+    logger.info("BQ Materializer settings look good...")

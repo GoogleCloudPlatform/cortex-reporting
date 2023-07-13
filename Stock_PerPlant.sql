@@ -11,11 +11,6 @@
 #-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Stock_PerPlant`
-OPTIONS(
-  description = "Stock information per plant"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/Stock_PerPlant.sql' -%}
 {% endif -%}
@@ -27,4 +22,3 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/Stock_PerPlant.sql' -%}
 {% endif -%}
-;

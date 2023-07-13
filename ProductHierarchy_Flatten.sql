@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.ProductHierarchy_Flatten`
-OPTIONS(
-  description = "Product Hierarchy Flattener"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/ProductHierarchy_Flatten.sql' -%}
 {% endif -%}

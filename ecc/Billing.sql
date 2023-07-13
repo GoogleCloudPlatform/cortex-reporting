@@ -108,7 +108,8 @@ SELECT
   CalendarDateDimension_FKDAT.CalMonth AS MonthOfBillingDate_FKDAT,
   CalendarDateDimension_FKDAT.CalWeek AS WeekOfBillingDate_FKDAT,
   CalendarDateDimension_FKDAT.CalQuarter AS DayOfBillingDate_FKDAT,
-  -- ##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
+  -- ##CORTEX-CUSTOMER If you prefer to use currency conversion,
+  -- uncomment below
   -- currency_conversion.UKURS AS ExchangeRate_UKURS,
   -- currency_conversion.conv_date AS Conversion_date,
   -- currency_conversion.TCURR AS TargetCurrency_TCURR,
@@ -117,6 +118,7 @@ SELECT
   -- AGGKONV.rebate * currency_conversion.UKURS AS RebateInTargetCurrency,
   COALESCE(VBRP.NETWR * currency_decimal.CURRFIX, VBRP.NETWR) AS NetValue_NETWR,
   COALESCE(VBRK.MWSBK * currency_decimal.CURRFIX, VBRK.MWSBK) AS TaxAmount_MWSBK,
+  COALESCE(VBRP.MWSBP * currency_decimal.CURRFIX, VBRP.MWSBP) AS TaxAmountPos_MWSBP,
   COALESCE(AGGKONV.rebate * currency_decimal.CURRFIX, AGGKONV.rebate) AS Rebate,
   COUNT(VBRK.VBELN) OVER(PARTITION BY CalendarDateDimension_FKDAT.CalYear) AS YearOrderCount,
   COUNT(VBRK.VBELN) OVER(PARTITION BY CalendarDateDimension_FKDAT.CalYear, CalendarDateDimension_FKDAT.CalMonth) AS MonthOrderCount,
@@ -130,15 +132,15 @@ LEFT JOIN AGGKONV
   ON AGGKONV.KNUMV = VBRK.KNUMV
     AND AGGKONV.KPOSN = VBRP.POSNR
     AND AGGKONV.MANDT = VBRP.MANDT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON vbrk.WAERK = currency_decimal.CURRKEY
 -- ##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
--- LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+-- LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 --   ON VBRK.MANDT = currency_conversion.MANDT
 --     AND VBRK.WAERK = currency_conversion.FCURR
 --     AND VBRK.FKDAT = currency_conversion.conv_date
 --     AND currency_conversion.TCURR {{ currency }}
 -- ##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --     AND currency_conversion.KURST = 'M'
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_FKDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_FKDAT
   ON CalendarDateDimension_FKDAT.Date = VBRK.FKDAT

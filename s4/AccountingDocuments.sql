@@ -854,17 +854,17 @@ INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.bkpf` AS BKPF
 -- Example of impacted currencies JPY, IDR, KRW, TWD
 -- Example of non-impacted currencies USD, GBP, EUR
 -- Example 1,000 JPY will appear as 10.00 JPY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXWAERS
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS TCURXWAERS
   ON BKPF.WAERS = TCURXWAERS.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXHWAER
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS TCURXHWAER
   ON BKPF.HWAER = TCURXHWAER.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXHWAE2
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS TCURXHWAE2
   ON BKPF.HWAE2 = TCURXHWAE2.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXHWAE3
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS TCURXHWAE3
   ON BKPF.HWAE3 = TCURXHWAE3.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS TCURXPSWSL
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS TCURXPSWSL
   ON BSEG.PSWSL = TCURXPSWSL.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_H_BUDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_H_BUDAT
   ON CalendarDateDimension_H_BUDAT.Date = BSEG.H_BUDAT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
   ON CalendarDateDimension_BLDAT.Date = BKPF.BLDAT

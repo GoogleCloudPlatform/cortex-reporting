@@ -14,40 +14,26 @@
 
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 
-CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.stock_characteristics_config`
+CREATE TABLE IF NOT EXISTS `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockCharacteristicsConfig`
 (
-mandt	STRING,
-insmk	STRING,
-shkzg	STRING,
-sobkz	STRING,
-bwart	STRING,
-stock_characteristic STRING
+  Client_MANDT STRING,
+  StockType_INSMK STRING,
+  Debit_CreditIndicator_SHKZG STRING,
+  SpecialStockIndicator_SOBKZ STRING,
+  MovementType_BWART STRING,
+  StockCharacteristic STRING
 );
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockCharacteristicsConfig`
-OPTIONS(
-description = "Stock Characteristics Config"
-)
-AS
-{% include './ecc/StockCharacteristicsConfig.sql' -%}
-;
 {% endif -%}
 
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 
-CREATE TABLE IF NOT EXISTS `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.stock_characteristics_config`
+CREATE TABLE IF NOT EXISTS `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockCharacteristicsConfig`
 (
-mandt	STRING,
-bstaus_sg STRING,
-sobkz	STRING,
-stock_characteristic STRING
+  Client_MANDT STRING,
+  StockCharacteristic_BSTAUS_SG STRING,
+  SpecialStockIndicator_SOBKZ STRING,
+  StockCharacteristic STRING
 );
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockCharacteristicsConfig`
-OPTIONS(
-description = "Stock Characteristics Config"
-)
-AS
-{% include './s4/StockCharacteristicsConfig.sql' -%}
-;
 {% endif -%}

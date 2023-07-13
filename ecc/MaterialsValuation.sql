@@ -146,17 +146,17 @@ LEFT JOIN
   `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.t001` AS t001
   ON t001.MANDT = t001k.MANDT
     AND t001.BUKRS = t001k.BUKRS
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON t001.WAERS = currency_decimal.CURRKEY
 --##CORTEX-CUSTOMER If you prefer to use currency conversion, uncomment below
--- LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_conversion` AS currency_conversion
+-- LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_conversion` AS currency_conversion
 --   ON mbew.MANDT = currency_conversion.MANDT
 --     AND t001.WAERS = currency_conversion.FCURR
 --     AND mbew.LAEPR = currency_conversion.conv_date
 --     AND currency_conversion.TCURR {{ currency }}
 --     --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
 --     AND currency_conversion.KURST = 'M'
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_LAEPR
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_LAEPR
   ON CalendarDateDimension_LAEPR.Date = mbew.LAEPR
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.calendar_date_dim` AS CalendarDateDimension_ZKDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_ZKDAT
   ON CalendarDateDimension_ZKDAT.Date = mbew.ZKDAT

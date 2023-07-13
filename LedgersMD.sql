@@ -12,11 +12,6 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.LedgersMD`
-OPTIONS(
-  description = "General Ledger Master Data"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/LedgersMD.sql' -%}
 {% endif -%}
@@ -28,5 +23,4 @@ UNION ALL
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/LedgersMD.sql' -%}
 {% endif -%}
-;
 

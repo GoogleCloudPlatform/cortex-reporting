@@ -92,11 +92,11 @@ SELECT
   COALESCE(ekbe.WRBTR * currency_decimal.CURRFIX, ekbe.WRBTR) AS AmountInDocumentCurrency_WRBTR
 FROM
   `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.ekbe` AS ekbe
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.currency_decimal` AS currency_decimal
+LEFT JOIN `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON ekbe.WAERS = currency_decimal.CURRKEY
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BUDAT
   ON CalendarDateDimension_BUDAT.Date = ekbe.BUDAT
-LEFT JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
+LEFT JOIN `{{ project_id_src }}.{{ k9_datasets_processing }}.calendar_date_dim` AS CalendarDateDimension_BLDAT
   ON CalendarDateDimension_BLDAT.Date = ekbe.BLDAT
 --vgabe='1' for Goods Receipt and vgabe='2' for Invoice Receipt
 WHERE ekbe.VGABE IN ('1', '2')

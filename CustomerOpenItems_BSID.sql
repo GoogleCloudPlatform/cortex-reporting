@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CustomerOpentems`
-OPTIONS(
-description = "Customer open financial items (a.k.a BSID table)"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 ({% include './ecc/CustomerOpenItems_BSID.sql' -%})
 {% endif -%}

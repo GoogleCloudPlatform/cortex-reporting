@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.Stock_NonValuated`
-OPTIONS(
-  description = "Non-valuated stock levels per plant and Storage location"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/Stock_NonValuated.sql' -%}
 {% endif -%}

@@ -13,11 +13,6 @@
 #-- limitations under the License.
 
 #-- CORTEX-CUSTOMER: This view is in PREVIEW and may be subject to change
-CREATE OR REPLACE TABLE `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockInHand`
-OPTIONS(
-description = "Stock In Hand"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/StockInHand.sql' -%}
 {% endif -%}

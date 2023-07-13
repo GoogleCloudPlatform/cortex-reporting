@@ -65,13 +65,13 @@ SELECT
   ) AS AmountWeeklyCumulative,
   StockWeeklySnapshots.stock_characteristic AS StockCharacteristic
 FROM
-  `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.stock_weekly_snapshots` AS StockWeeklySnapshots
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.stock_weekly_snapshots` AS StockWeeklySnapshots
 LEFT JOIN
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CompaniesMD` AS CompaniesMD
   ON StockWeeklySnapshots.MANDT = CompaniesMD.Client_MANDT
     AND StockWeeklySnapshots.BUKRS = CompaniesMD.CompanyCode_BUKRS
 LEFT JOIN
-  `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.currency_decimal` AS currency_decimal
+  `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.currency_decimal` AS currency_decimal
   ON
     StockWeeklySnapshots.WAERS = currency_decimal.CURRKEY
 WHERE StockWeeklySnapshots.Stock_Characteristic != 'BlockedReturns'
