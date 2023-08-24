@@ -13,6 +13,11 @@
     "currencies": [
         "USD"
     ],
+    "k9": {
+        "datasets": {
+            "processing": "K9_PROCESSING"
+        }
+    },
     "SAP": {
         "deployCDC": true,
         "datasets": {

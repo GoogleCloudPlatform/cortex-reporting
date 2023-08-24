@@ -838,6 +838,14 @@ SELECT
     AND BSEG.AUGDT IS NULL, BSEG.DMBTR, 0) AS DoubtfulReceivables,
   DATE_DIFF( `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T), CURRENT_DATE(), DAY)
   AS DaysInArrear,
+  --## CORTEX-CUSTOMER The calculation will give positive DoubtfulReceivables(amount) for the items which are due more than 90 days from the key date.
+  -- IF(BKPF.BUDAT < CURRENT_DATE() AND (DATE_DIFF(CURRENT_DATE(), `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T), DAY) > 90 )
+  --   AND BSEG.AUGDT IS NULL, BSEG.DMBTR, 0) AS DoubtfulReceivables,
+
+  --## CORTEX-CUSTOMER The calculation will give positive DaysInArrear for the late payment and negative when expected on time.
+  -- DATE_DIFF(CURRENT_DATE(), `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.NetDueDateCalc`(BSEG.KOART, BSEG.ZFBDT, BKPF.BLDAT, BSEG.SHKZG, BSEG.REBZG, BSEG.ZBD3T, BSEG.ZBD2T, BSEG.ZBD1T), DAY)
+  -- AS DaysInArrear,
+
   IF(bseg.koart = 'D' AND bseg.augdt IS NULL AND bseg.H_BUDAT < CURRENT_DATE(), bseg.dmbtr, 0) AS AccountsReceivable,
   IF(bseg.koart = 'D' AND bseg.H_BUDAT < CURRENT_DATE() AND bseg.xumsw = 'X', bseg.dmbtr, 0) AS Sales
 FROM BSEG AS BSEG

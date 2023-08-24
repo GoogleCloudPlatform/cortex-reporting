@@ -31,10 +31,38 @@ steps:
         cat ${_CONFIG_FILE}
         echo -e "\n--------------------------------"
 
+  # Generate required K9 Processing tables in case they don't exist, so as not to break Reporting.
+  - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
+    id: 'generate_k9_placeholder'
+    waitFor: ['init_deploy_config']
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |-
+        echo "Creating placeholder K9 Processing tables in case they do not exist."
+        set -e
+        export PYTHONPATH=$$PYTHONPATH:./src
+
+        if [[ "${_TGT_BUCKET}" != "" ]]
+        then
+          _TGT_BUCKET_="${_TGT_BUCKET}"
+        else
+          _TGT_BUCKET_=$(jq -r ."targetBucket" "${_CONFIG_FILE}")
+        fi
+
+        common/materializer/deploy.sh \
+            --gcs_logs_bucket "${_GCS_BUCKET}" \
+            --gcs_tgt_bucket "$${_TGT_BUCKET_}" \
+            --module_name "k9" \
+            --target_type "processing" \
+            --config_file "${_CONFIG_FILE}" \
+            --materializer_settings_file config/k9_placeholder_settings.yaml
+        echo "✅ Placeholder K9 Processing tables have been created if they did not exist."
+
   # TODO: External DAGs & related steps are to be merged into Reporting in the next version
   - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
     id: generate_external_dags
-    waitFor: ['init_deploy_config']
+    waitFor: ['generate_k9_placeholder']
     entrypoint: /bin/bash
     args:
       - "-c"
@@ -62,7 +90,7 @@ steps:
           --sql-flavour "$${_SQL_FLAVOUR_}" \
           --mandt "$${_MANDT_}"
 
-# Unfold hierarchies - dag_hierarchies_module.py will only be copied if datasets exist
+  # Unfold hierarchies - dag_hierarchies_module.py will only be copied if datasets exist
   # This step will be merged into local K9 step in next release
   - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
     id: hier_reader
