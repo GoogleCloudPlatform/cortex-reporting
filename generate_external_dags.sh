@@ -86,7 +86,7 @@ validate() {
     mandt="100"
   fi
 
-  exists=$(bq query --location="${location}" --project_id="${project_id_src}" --use_legacy_sql=false "select distinct 'KITTYCORN' from ${dataset_cdc_processed}.INFORMATION_SCHEMA.TABLES")
+  exists=$(bq query --location="${location}" --project_id="${project_id_src}" --use_legacy_sql=false "select distinct 'KITTYCORN' from \`"${dataset_cdc_processed}".INFORMATION_SCHEMA.TABLES\`")
   if [[ ! "$exists" == *"KITTYCORN"* ]]; then
     echo "ERROR: Dataset $dataset_cdc_processed does not exist or has no tables, Aborting."
     exit 1
