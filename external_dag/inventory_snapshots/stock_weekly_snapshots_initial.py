@@ -39,7 +39,6 @@ default_args = {
 
 with DAG(
     'Stock_Weekly_Snapshots_Initial',
-    template_searchpath=['/home/airflow/gcs/data/bq_data_replication'],
     default_args=default_args,
     description='Create weekly inventory snapshots.',
     schedule_interval='@once',

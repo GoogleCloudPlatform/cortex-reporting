@@ -1,4 +1,4 @@
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ from google.cloud.exceptions import NotFound
 from google.cloud import bigquery
 from google.cloud import storage
 
-_HIER_DAG_PYTHON_TEMPLATE = 'template_dag/dag_sql_hierarchies.py'
+_HIER_DAG_PYTHON_TEMPLATE = ('external_dag/hier_reader/template_dag'
+                             '/dag_sql_hierarchies.py')
 
-_GENERATED_DAG_DIR = '../../generated_dag'
+_GENERATED_DAG_DIR = 'generated_dag'
 
 client = bigquery.Client()
 storage_client = storage.Client()
@@ -37,7 +38,7 @@ def generate_dag_py_file(template, file_name, **dag_subs):
         dag_template = Template(dag_template_file.read())
     generated_dag_code = dag_template.substitute(**dag_subs)
 
-    dag_file = _GENERATED_DAG_DIR + '/' + file_name
+    dag_file = f'{_GENERATED_DAG_DIR}/{file_name}'
     with open(dag_file, mode='w+', encoding='utf-8') as generated_dag_file:
         generated_dag_file.write(generated_dag_code)
         generated_dag_file.close()
@@ -64,7 +65,6 @@ def check_create_hiertable(full_table, field):
         table = bigquery.Table(full_table, schema=schema)
         table = client.create_table(table)
         print(f'Created {full_table}')
-
 
 def copy_to_storage(gcs_bucket, prefix, directory, filename):
     try:

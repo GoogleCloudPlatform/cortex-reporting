@@ -40,7 +40,6 @@ default_args = {
 
 with DAG(
     'Stock_Characteristics_Config',
-    template_searchpath=['/home/airflow/gcs/data/bq_data_replication'],
     default_args=default_args,
     description='Creates config table for stock characteristics.',
     schedule_interval='@daily',

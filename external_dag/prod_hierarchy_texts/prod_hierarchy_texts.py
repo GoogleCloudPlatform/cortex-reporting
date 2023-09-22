@@ -26,7 +26,6 @@ default_args = {
 
 with DAG(
         'Product_Hierarchy_Text',
-        template_searchpath=['/home/airflow/gcs/data/bq_data_replication/'],
         default_args=default_args,
         schedule_interval='@yearly',
         start_date=datetime(2021, 1, 1),

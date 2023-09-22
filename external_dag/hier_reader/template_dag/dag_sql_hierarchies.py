@@ -18,9 +18,8 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
 
-sys.path.append('/home/airflow/gcsfuse/dags/hierarchies')
-from hierarchies import dag_hierarchies_module
-
+sys.path.append('/home/airflow/gcs/dags/sap/reporting/hier_reader')
+import dag_hierarchies_module
 
 default_dag_args = {
    'depends_on_past': False,

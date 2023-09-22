@@ -1,4 +1,4 @@
-#-- Copyright 2022 Google LLC
+#-- Copyright 2023 Google LLC
 #--
 #-- Licensed under the Apache License, Version 2.0 (the "License");
 #-- you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@ steps:
   # init_deployment_config.py leaves the validated config.json file in workspace/config so it's available for other build steps
   - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
     entrypoint: "bash"
-    id: 'init_deploy_config'
+    id: "init_deploy_config"
     args:
       - "-c"
       - |-
@@ -32,9 +32,9 @@ steps:
         echo -e "\n--------------------------------"
 
   # Generate required K9 Processing tables in case they don't exist, so as not to break Reporting.
-  - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
-    id: 'generate_k9_placeholder'
-    waitFor: ['init_deploy_config']
+  - name: "gcr.io/kittycorn-public/deploy-kittycorn:v2.0"
+    id: "generate_k9_placeholder"
+    waitFor: ["init_deploy_config"]
     entrypoint: /bin/bash
     args:
       - "-c"
@@ -59,134 +59,34 @@ steps:
             --materializer_settings_file config/k9_placeholder_settings.yaml
         echo "✅ Placeholder K9 Processing tables have been created if they did not exist."
 
-  # TODO: External DAGs & related steps are to be merged into Reporting in the next version
-  - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
-    id: generate_external_dags
-    waitFor: ['generate_k9_placeholder']
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        _PJID_SRC_=$(jq -r ."projectIdSource" "${_CONFIG_FILE}")
-        _PJID_TGT_=$(jq -r ."projectIdTarget" "${_CONFIG_FILE}")
-        _LOCATION_=$(jq -r ."location" "${_CONFIG_FILE}")
-        _TEST_DATA_=$(jq -r ."testData" "${_CONFIG_FILE}")
-        _DS_CDC_=$(jq -r ."SAP.datasets.cdc" "${_CONFIG_FILE}")
-        _SQL_FLAVOUR_=$(jq -r ."SAP.SQLFlavor" "${_CONFIG_FILE}")
-        _DS_REPORTING_=$(jq -r ."SAP.datasets.reporting" "${_CONFIG_FILE}")
-        _MANDT_=$(jq -r ."SAP.mandt" "${_CONFIG_FILE}")
-        _K9_PROCESSING=$(jq -r ."k9.datasets.processing" "${_CONFIG_FILE}")
-
-        echo "Running generate_external_dags"
-        ./generate_external_dags.sh \
-          --source-project "$${_PJID_SRC_}" \
-          --target-project "$${_PJID_TGT_}" \
-          --cdc-processed-dataset "$${_DS_CDC_}" \
-          --reporting-dataset "$${_DS_REPORTING_}" \
-          --k9-processing-dataset "$${_K9_PROCESSING}" \
-          --location "$${_LOCATION_}" \
-          --test-data "$${_TEST_DATA_}" \
-          --run-ext-sql "true" \
-          --sql-flavour "$${_SQL_FLAVOUR_}" \
-          --mandt "$${_MANDT_}"
-
-  # Unfold hierarchies - dag_hierarchies_module.py will only be copied if datasets exist
-  # This step will be merged into local K9 step in next release
-  - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
-    id: hier_reader
-    entrypoint: /bin/bash
-    waitFor: ['generate_external_dags']
-    args:
-      - -c
-      - |
-        _PJID_SRC_=$(jq -r ."projectIdSource" "${_CONFIG_FILE}")
-        _PJID_TGT_=$(jq -r ."projectIdTarget" "${_CONFIG_FILE}")
-        _DEPLOY_CDC_=$(jq -r ."SAP.deployCDC" "${_CONFIG_FILE}")
-        _DS_RAW_=$(jq -r ."SAP.datasets.raw" "${_CONFIG_FILE}")
-        _DS_REPORTING_=$(jq -r ."SAP.datasets.reporting" "${_CONFIG_FILE}")
-        if [[ "${_TGT_BUCKET}" != "" ]]
-        then
-          _TGT_BUCKET_="${_TGT_BUCKET}"
-        else
-          _TGT_BUCKET_=$(jq -r ."targetBucket" "${_CONFIG_FILE}")
-        fi
-
-        echo "Running hier_reader"
-        cd ./external_dag/hier_reader && python hier_reader.py $$_PJID_SRC_ $$_DS_RAW_ $$_PJID_TGT_ $$_DS_REPORTING_ $$_TGT_BUCKET_
-
-  - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
-    id: copy_dag_py_files_to_gcs
-    waitFor: ['hier_reader']
-    entrypoint: /bin/bash
-    args:
-      - -c
-      - |
-        if [[ "${_TGT_BUCKET}" != "" ]]
-        then
-          _TGT_BUCKET_="${_TGT_BUCKET}"
-        else
-          _TGT_BUCKET_=$(jq -r ."targetBucket" "${_CONFIG_FILE}")
-        fi
-
-        echo "Running copy_dag_py_files_to_gcs"
-        generated_files=$(shopt -s nullglob dotglob; echo ./generated_dag/*.py)
-        if (( ${#generated_files} ))
-        then
-          gsutil -m cp -r './generated_dag/*.py' gs://$${_TGT_BUCKET_}/dags/
-        else
-          echo "🔪🔪🔪No Python files found under generated_dag folder or the folder does not exist. Skipping copy.🔪🔪🔪"
-        fi
-
-  - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
-    id: copy_dag_sql_files_to_gcs
-    waitFor: ['hier_reader']
-    entrypoint: /bin/bash
-    args:
-      - -c
-      - |
-        _DEPLOY_CDC_=$(jq -r ."SAP.deployCDC" "${_CONFIG_FILE}")
-        if [[ "${_TGT_BUCKET}" != "" ]]
-        then
-          _TGT_BUCKET_="${_TGT_BUCKET}"
-        else
-          _TGT_BUCKET_=$(jq -r ."targetBucket" "${_CONFIG_FILE}")
-        fi
-
-        echo "Copying DAG SQL files to GCS..."
-        generated_files=$(shopt -s nullglob dotglob; echo ./generated_sql/*.sql)
-        if (( ${#generated_files} ))
-        then
-          gsutil -m cp -r './generated_sql/*.sql' gs://$${_TGT_BUCKET_}/data/bq_data_replication/
-        else
-          echo "🔪No SQL files found under generated_sql folder or the folder does not exist. Skipping copy.🔪"
-        fi
-
-  - name: 'gcr.io/kittycorn-public/deploy-kittycorn:v2.0'
-    id: copy_dag_ini_files_to_gcs
-    waitFor: ['hier_reader']
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        if [[ "${_TGT_BUCKET}" != "" ]]
-        then
-          _TGT_BUCKET_="${_TGT_BUCKET}"
-        else
-          _TGT_BUCKET_=$(jq -r ."target_bucket" "${_CONFIG_FILE}")
-        fi
-
-        echo "Running copy_dag_ini_files_to_gcs"
-        generated_files=$(shopt -s nullglob dotglob; echo ./generated_dag/*.ini)
-        if (( ${#generated_files} ))
-        then
-          gsutil -m cp -r './generated_dag/*.ini' gs://$${_TGT_BUCKET_}/data/api_input/
-        else
-          echo "🔪No INI files found under generated_dag folder or the folder does not exist. Skipping copy.🔪"
-        fi
-
   - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
-    id: 'reporting'
-    waitFor: ['hier_reader']
+    id: "generate_local_k9"
+    waitFor: ["init_deploy_config"]
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |-
+        if [[ "${_TGT_BUCKET}" != "" ]]
+        then
+          _TGT_BUCKET_="${_TGT_BUCKET}"
+        else
+          _TGT_BUCKET_=$(jq -r ."targetBucket" "${_CONFIG_FILE}")
+        fi
+
+        bq_object_settings_file="config/reporting_settings_local_k9.yaml"
+
+        # Execute the common report generation script.
+        common/materializer/deploy.sh \
+            --gcs_logs_bucket "${_GCS_BUCKET}" \
+            --gcs_tgt_bucket "$${_TGT_BUCKET_}" \
+            --module_name "SAP" \
+            --target_type "Reporting" \
+            --config_file "${_CONFIG_FILE}" \
+            --materializer_settings_file "$${bq_object_settings_file}" \
+            --k9_manifest "${_K9_MANIFEST_FILE}"
+  - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
+    id: "reporting"
+    waitFor: ["generate_k9_placeholder", "generate_local_k9"]
     entrypoint: "bash"
     args:
       - "-c"
@@ -211,9 +111,13 @@ steps:
             --target_type "Reporting" \
             --config_file "${_CONFIG_FILE}" \
             --materializer_settings_file "$${bq_object_settings_file}"
+
+        # Load annotations
+        python3 common/annotations_loader.py --annotations-directory "annotations/${_SQL_FLAVOUR_,,}"
 logsBucket: "gs://$_GCS_BUCKET"
 timeout: 7200s
 substitutions:
-  _CONFIG_FILE: "config/sap_config.json"
+  _CONFIG_FILE: "config/config.json"
+  _K9_MANIFEST_FILE: "k9_manifest.yaml"
 options:
   substitution_option: "ALLOW_LOOSE"

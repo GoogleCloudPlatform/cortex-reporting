@@ -1,4 +1,4 @@
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,28 +13,28 @@
 # limitations under the License.
 
 sets_data:
-#Cost Centers: 
+#Cost Centers:
 # table: csks, select_fields (cost center): 'kostl', where clause: Controling Area (kokrs), Valid to (datbi)
-#- setname: 'H1' 
-- setname: 'H1010' 
+#- setname: 'H1'
+- setname: 'DAIRYFOODS'
   setclass: '0101'
-  orgunit: '1000'
-  mandt:  '800'
+  orgunit: 'C001'
+  mandt:  '100'
   table: 'csks'
   key_field: 'kostl'
-  where_clause: [ kokrs = '1000', datbi >= cast('9999-12-31' as date)]
+  where_clause: [ kokrs = 'C001', datbi >= cast('9999-12-31' as date)]
   load_frequency: "@daily"
-#Profit Centers: 
+#Profit Centers:
 # setclass: 0106, table: cepc, select_fields (profit center): 'cepc', where clause: Controling Area (kokrs), Valid to (datbi)
-#- setname: 'HE' 
-- setname: 'H_TECH15' 
+#- Sample Trx: kch4
+- setname: 'DAIRYFOODS'
   setclass: '0106'
-  orgunit: '1000'
-  mandt:  '800'
+  orgunit: 'C001'
+  mandt:  '100'
   table: 'cepc'
   key_field: 'prctr'
-  where_clause: [ kokrs = '1000', datbi >= cast('9999-12-31' as date) ]  
-  load_frequency: "@monthly"
+  where_clause: [ kokrs = 'C001', datbi >= cast('9999-12-31' as date)]
+  load_frequency: "@daily"
 
 #G/L Accounts:
 # table: ska1, select_fields (GL Account): 'saknr', where clause: Chart of Accounts (KTOPL), set will be manual. May also need to poll Finanscial Statement versions.

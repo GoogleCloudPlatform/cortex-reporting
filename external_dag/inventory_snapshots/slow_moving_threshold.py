@@ -39,7 +39,6 @@ default_args = {
 
 with DAG(
         'Slow_Moving_Threshold',
-        template_searchpath=['/home/airflow/gcs/data/bq_data_replication/'],
         default_args=default_args,
         description='Creates Slow_Moving_Threshold for ECC and S4 Tables',
         schedule_interval='@once',

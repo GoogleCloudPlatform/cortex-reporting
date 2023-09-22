@@ -31,7 +31,6 @@ default_args = {
 ## for non-decimal-based currencies.
 with DAG(
         'currency_conversion',
-        template_searchpath=['/home/airflow/gcs/data/bq_data_replication/'],
         default_args=default_args,
         schedule_interval='@daily',
         start_date=datetime(2022, 8, 11),
