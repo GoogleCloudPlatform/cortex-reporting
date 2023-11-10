@@ -17,7 +17,46 @@ WITH
       --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
       AND ExchangeRateType_KURST = 'M'
   ),
-
+  -- Isolating OVER() clause to reduce processing memory requirements
+  MaterialCostAndPrice AS (
+    SELECT DISTINCT
+      StockWeeklySnapshots.MaterialNumber_MATNR,
+      StockWeeklySnapshots.Plant_WERKS,
+      StockWeeklySnapshots.WeekEndDate,
+      --If StandardCost is null for current week then it picks up the last existing StandardCost
+      IF(
+        MaterialLedger.StandardCost_STPRS IS NULL,
+        LAST_VALUE(MaterialLedger.StandardCost_STPRS IGNORE NULLS) OVER (
+          PARTITION BY
+            StockWeeklySnapshots.MaterialNumber_MATNR, StockWeeklySnapshots.Plant_WERKS
+          ORDER BY
+            StockWeeklySnapshots.WeekEndDate
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ),
+        MaterialLedger.StandardCost_STPRS) AS StandardCost_STPRS,
+      --If MovingAveragePrice is null for current week then it picks up the last existing MovingAveragePrice
+      IF(
+        MaterialLedger.MovingAveragePrice IS NULL,
+        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS) OVER (
+          PARTITION BY
+            StockWeeklySnapshots.MaterialNumber_MATNR, StockWeeklySnapshots.Plant_WERKS
+          ORDER BY
+            StockWeeklySnapshots.WeekEndDate
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ),
+        MaterialLedger.MovingAveragePrice) AS MovingAveragePrice_VERPR
+    FROM
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockWeeklySnapshots` AS StockWeeklySnapshots
+    LEFT JOIN
+      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialLedger` AS MaterialLedger
+      ON
+        StockWeeklySnapshots.Client_MANDT = MaterialLedger.Client_MANDT
+        AND StockWeeklySnapshots.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
+        AND StockWeeklySnapshots.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
+        AND StockWeeklySnapshots.FiscalYear = MaterialLedger.FiscalYear
+        AND StockWeeklySnapshots.FiscalPeriod = SUBSTR(MaterialLedger.PostingPeriod, (-2), 2)
+        AND MaterialLedger.ValuationType_BWTAR = ''
+  ),
   CurrentStock AS (
     SELECT
       StockWeeklySnapshots.Client_MANDT,
@@ -48,22 +87,8 @@ WITH
         StockWeeklySnapshots.WeekEndDate = LAST_DAY(CURRENT_DATE, WEEK),
         CURRENT_DATE,
         StockWeeklySnapshots.WeekEndDate) AS WeekEndDate,
-      --If StandardCost is null for current month then it picks up the last existing StandardCost
-      IF(
-        MaterialLedger.StandardCost_STPRS IS NULL,
-        LAST_VALUE(MaterialLedger.StandardCost_STPRS IGNORE NULLS) OVER (
-          ORDER BY StockWeeklySnapshots.MaterialNumber_MATNR,
-            StockWeeklySnapshots.Plant_WERKS,
-            StockWeeklySnapshots.WeekEndDate),
-        MaterialLedger.StandardCost_STPRS) AS StandardCost_STPRS,
-      --If MovingAveragePrice is null for current month then it picks up the last existing MovingAveragePrice
-      IF(
-        MaterialLedger.MovingAveragePrice IS NULL,
-        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS) OVER (
-          ORDER BY StockWeeklySnapshots.MaterialNumber_MATNR,
-            StockWeeklySnapshots.Plant_WERKS,
-            StockWeeklySnapshots.WeekEndDate),
-        MaterialLedger.MovingAveragePrice) AS MovingAveragePrice_VERPR
+      MaterialCostAndPrice.StandardCost_STPRS,
+      MaterialCostAndPrice.MovingAveragePrice_VERPR
     FROM
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockWeeklySnapshots` AS StockWeeklySnapshots
     LEFT JOIN
@@ -84,14 +109,11 @@ WITH
         StockWeeklySnapshots.Client_MANDT = PlantsMD.Client_MANDT
         AND StockWeeklySnapshots.Plant_WERKS = PlantsMD.Plant_WERKS
     LEFT JOIN
-      `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialLedger` AS MaterialLedger
+      MaterialCostAndPrice
       ON
-        StockWeeklySnapshots.Client_MANDT = MaterialLedger.Client_MANDT
-        AND StockWeeklySnapshots.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
-        AND StockWeeklySnapshots.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
-        AND StockWeeklySnapshots.FiscalYear = MaterialLedger.FiscalYear
-        AND StockWeeklySnapshots.FiscalPeriod = SUBSTR(MaterialLedger.PostingPeriod, (-2), 2)
-        AND MaterialLedger.ValuationType_BWTAR = ''
+        StockWeeklySnapshots.MaterialNumber_MATNR = MaterialCostAndPrice.MaterialNumber_MATNR
+        AND StockWeeklySnapshots.Plant_WERKS = MaterialCostAndPrice.Plant_WERKS
+        AND StockWeeklySnapshots.WeekEndDate = MaterialCostAndPrice.WeekEndDate
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StorageLocationsMD` AS StorageLocationsMD
       ON
