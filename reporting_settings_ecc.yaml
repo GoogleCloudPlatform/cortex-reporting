@@ -517,11 +517,27 @@ bq_dependent_objects:
 
   - sql_file: StockWeeklySnapshots.sql
     description: "Stock Weekly Snapshots"
-    type: script
+    type: table
+    table_setting:
+      load_frequency: "@daily"
+      partition_details: {
+        column: "WeekEndDate",
+        partition_type: "time",
+        time_grain: "day"
+      }
+      cluster_details: {columns: ["Client_MANDT", "MaterialNumber_MATNR", "Plant_WERKS"]}
 
   - sql_file: StockMonthlySnapshots.sql
     description: "Stock Monthly Snapshots"
-    type: script
+    type: table
+    table_setting:
+      load_frequency: "@weekly"
+      partition_details: {
+        column: "MonthEndDate",
+        partition_type: "time",
+        time_grain: "month"
+      }
+      cluster_details: {columns: ["Client_MANDT", "MaterialNumber_MATNR", "Plant_WERKS"]}
 
   - sql_file: InventoryKeyMetrics.sql
     type: table

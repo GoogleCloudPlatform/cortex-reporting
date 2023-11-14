@@ -12,37 +12,9 @@
 #-- See the License for the specific language governing permissions and
 #-- limitations under the License.
 
-
-
-CREATE TABLE IF NOT EXISTS `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.stock_weekly_snapshots`
-(
-mandt	STRING,
-werks	STRING,
-matnr	STRING,
-charg	STRING,
-lgort	STRING,
-bukrs	STRING,
-cal_year	INT64,
-cal_week	INT64,
-meins	STRING,
-waers	STRING,
-stock_characteristic	STRING,
-week_end_date	DATE,
-total_weekly_movement_quantity	NUMERIC,
-total_weekly_movement_amount NUMERIC,
-amount_weekly_cumulative NUMERIC,
-quantity_weekly_cumulative NUMERIC
-);
-
-CREATE OR REPLACE VIEW `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockWeeklySnapshots`
-OPTIONS(
-description = "Stock Weekly Snapshots"
-)
-AS
 {% if sql_flavour == 'ecc' or sql_flavour == 'union' -%}
 {% include './ecc/StockWeeklySnapshots.sql' -%}
 {% endif -%}
 {% if sql_flavour == 's4' or sql_flavour == 'union' -%}
 {% include './s4/StockWeeklySnapshots.sql' -%}
 {% endif -%}
-;
