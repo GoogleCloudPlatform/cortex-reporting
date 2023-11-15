@@ -17,35 +17,38 @@ WITH
       --##CORTEX-CUSTOMER Modify the exchange rate type based on your requirement
       AND ExchangeRateType_KURST = 'M'
   ),
-  -- Isolating OVER() clause to reduce processing memory requirements
+  -- Computing some metrics separately to avoid consuming too many resources in the next step
   MaterialCostAndPrice AS (
     SELECT DISTINCT
       StockWeeklySnapshots.MaterialNumber_MATNR,
       StockWeeklySnapshots.Plant_WERKS,
       StockWeeklySnapshots.WeekEndDate,
-      --If StandardCost is null for current week then it picks up the last existing StandardCost
-      IF(
-        MaterialLedger.StandardCost_STPRS IS NULL,
-        LAST_VALUE(MaterialLedger.StandardCost_STPRS IGNORE NULLS) OVER (
-          PARTITION BY
-            StockWeeklySnapshots.MaterialNumber_MATNR, StockWeeklySnapshots.Plant_WERKS
-          ORDER BY
-            StockWeeklySnapshots.WeekEndDate
-          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ),
-        MaterialLedger.StandardCost_STPRS) AS StandardCost_STPRS,
-      --If MovingAveragePrice is null for current week then it picks up the last existing MovingAveragePrice
-      IF(
-        MaterialLedger.MovingAveragePrice IS NULL,
-        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS) OVER (
-          PARTITION BY
-            StockWeeklySnapshots.MaterialNumber_MATNR, StockWeeklySnapshots.Plant_WERKS
-          ORDER BY
-            StockWeeklySnapshots.WeekEndDate
-          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ),
-        MaterialLedger.MovingAveragePrice) AS MovingAveragePrice_VERPR
-    FROM
+      StockWeeklySnapshots.FiscalYear,
+      StockWeeklySnapshots.FiscalPeriod,
+      -- If StandardCost is null for current week then it picks up the last existing StandardCost
+      COALESCE(
+        MaterialLedger.StandardCost_STPRS,
+        LAST_VALUE(MaterialLedger.StandardCost_STPRS IGNORE NULLS)
+          OVER ( --noqa: disable=L003
+            PARTITION BY
+              StockWeeklySnapshots.MaterialNumber_MATNR, StockWeeklySnapshots.Plant_WERKS
+            ORDER BY
+              StockWeeklySnapshots.WeekEndDate
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+          )) AS StandardCost_STPRS,
+      -- If MovingAveragePrice is null for current week then it picks up the last
+      -- existing MovingAveragePrice
+      COALESCE(
+        MaterialLedger.MovingAveragePrice,
+        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS)
+          OVER (
+            PARTITION BY
+              StockWeeklySnapshots.MaterialNumber_MATNR, StockWeeklySnapshots.Plant_WERKS
+            ORDER BY
+              StockWeeklySnapshots.WeekEndDate
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+          )) AS MovingAveragePrice_VERPR
+    FROM --noqa: enable=all
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockWeeklySnapshots` AS StockWeeklySnapshots
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialLedger` AS MaterialLedger
@@ -54,8 +57,9 @@ WITH
         AND StockWeeklySnapshots.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
         AND StockWeeklySnapshots.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
         AND StockWeeklySnapshots.FiscalYear = MaterialLedger.FiscalYear
-        AND StockWeeklySnapshots.FiscalPeriod = SUBSTR(MaterialLedger.PostingPeriod, (-2), 2)
-        AND MaterialLedger.ValuationType_BWTAR = ''
+        AND StockWeeklySnapshots.FiscalPeriod = SUBSTR(MaterialLedger.PostingPeriod, -2, 2)
+    WHERE
+      MaterialLedger.ValuationType_BWTAR = ''
   ),
   CurrentStock AS (
     SELECT
@@ -82,7 +86,7 @@ WITH
       PlantsMD.ValuationArea_BWKEY,
       StockWeeklySnapshots.QuantityWeeklyCumulative,
       StockWeeklySnapshots.AmountWeeklyCumulative,
-      --If weekend date is in future then it updates with current_date
+      -- If weekend date is in future then it updates with current_date
       IF(
         StockWeeklySnapshots.WeekEndDate = LAST_DAY(CURRENT_DATE, WEEK),
         CURRENT_DATE,
@@ -90,6 +94,8 @@ WITH
       MaterialCostAndPrice.StandardCost_STPRS,
       MaterialCostAndPrice.MovingAveragePrice_VERPR
     FROM
+      -- TODO: Evaluate if all columns in StockWeeklySnapshots can be moved into
+      -- MaterialCostAndPrice so we don't need to query the source table twice.
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockWeeklySnapshots` AS StockWeeklySnapshots
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialsBatchMD` AS MaterialsBatchMD
@@ -114,6 +120,8 @@ WITH
         StockWeeklySnapshots.MaterialNumber_MATNR = MaterialCostAndPrice.MaterialNumber_MATNR
         AND StockWeeklySnapshots.Plant_WERKS = MaterialCostAndPrice.Plant_WERKS
         AND StockWeeklySnapshots.WeekEndDate = MaterialCostAndPrice.WeekEndDate
+        AND StockWeeklySnapshots.FiscalYear = MaterialCostAndPrice.FiscalYear
+        AND StockWeeklySnapshots.FiscalPeriod = MaterialCostAndPrice.FiscalPeriod
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StorageLocationsMD` AS StorageLocationsMD
       ON

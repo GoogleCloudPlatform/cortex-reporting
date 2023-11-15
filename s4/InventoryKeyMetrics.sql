@@ -18,34 +18,36 @@ WITH
       StockMonthlySnapshots.MaterialNumber_MATNR,
       StockMonthlySnapshots.Plant_WERKS,
       StockMonthlySnapshots.MonthEndDate,
-      IF(
-        MaterialLedger.ValueOfTotalValuatedStock_SALK3 IS NULL,
-        LAST_VALUE(MaterialLedger.ValueOfTotalValuatedStock_SALK3 IGNORE NULLS) OVER (
-          PARTITION BY
-            StockMonthlySnapshots.MaterialNumber_MATNR, StockMonthlySnapshots.Plant_WERKS
-          ORDER BY
-            StockMonthlySnapshots.MonthEndDate
-          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
-        MaterialLedger.ValueOfTotalValuatedStock_SALK3) AS ValueOfTotalValuatedStock_SALK3,
-      IF(
-        MaterialLedger.StandardCost_STPRS IS NULL,
-        LAST_VALUE(MaterialLedger.StandardCost_STPRS IGNORE NULLS) OVER (
-          PARTITION BY
-            StockMonthlySnapshots.MaterialNumber_MATNR, StockMonthlySnapshots.Plant_WERKS
-          ORDER BY
-            StockMonthlySnapshots.MonthEndDate
-          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
-        MaterialLedger.StandardCost_STPRS) AS StandardCost_STPRS,
-      IF(
-        MaterialLedger.MovingAveragePrice IS NULL,
-        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS) OVER (
-          PARTITION BY
-            StockMonthlySnapshots.MaterialNumber_MATNR, StockMonthlySnapshots.Plant_WERKS
-          ORDER BY
-            StockMonthlySnapshots.MonthEndDate
-          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
-        MaterialLedger.MovingAveragePrice) AS MovingAveragePrice_VERPR
-    FROM
+      StockMonthlySnapshots.FiscalYear,
+      StockMonthlySnapshots.FiscalPeriod,
+      COALESCE(
+        MaterialLedger.ValueOfTotalValuatedStock_SALK3,
+        LAST_VALUE(MaterialLedger.ValueOfTotalValuatedStock_SALK3 IGNORE NULLS)
+          OVER ( -- noqa: disable=L003
+            PARTITION BY
+              StockMonthlySnapshots.MaterialNumber_MATNR, StockMonthlySnapshots.Plant_WERKS
+            ORDER BY
+              StockMonthlySnapshots.MonthEndDate
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS ValueOfTotalValuatedStock_SALK3,
+      COALESCE(
+        MaterialLedger.StandardCost_STPRS,
+        LAST_VALUE(MaterialLedger.StandardCost_STPRS IGNORE NULLS)
+          OVER (
+            PARTITION BY
+              StockMonthlySnapshots.MaterialNumber_MATNR, StockMonthlySnapshots.Plant_WERKS
+            ORDER BY
+              StockMonthlySnapshots.MonthEndDate
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS StandardCost_STPRS,
+      COALESCE(
+        MaterialLedger.MovingAveragePrice,
+        LAST_VALUE(MaterialLedger.MovingAveragePrice IGNORE NULLS)
+          OVER (
+            PARTITION BY
+              StockMonthlySnapshots.MaterialNumber_MATNR, StockMonthlySnapshots.Plant_WERKS
+            ORDER BY
+              StockMonthlySnapshots.MonthEndDate
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) AS MovingAveragePrice_VERPR
+    FROM -- noqa: enable=all
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockMonthlySnapshots` AS StockMonthlySnapshots
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.MaterialLedger` AS MaterialLedger
@@ -54,10 +56,10 @@ WITH
         AND StockMonthlySnapshots.MaterialNumber_MATNR = MaterialLedger.MaterialNumber_MATNR
         AND StockMonthlySnapshots.Plant_WERKS = MaterialLedger.ValuationArea_BWKEY
         AND StockMonthlySnapshots.FiscalYear = MaterialLedger.FiscalYear
-        AND StockMonthlySnapshots.FiscalPeriod = SUBSTR(MaterialLedger.PostingPeriod, (-2), 2)
+        AND StockMonthlySnapshots.FiscalPeriod = SUBSTR(MaterialLedger.PostingPeriod, -2, 2)
         AND MaterialLedger.ValuationType_BWTAR = ''
   ),
-
+  -- TODO: Consider materializing this CTE to avoid multiple evaluations.
   CurrentStock AS (
     SELECT
       StockMonthlySnapshots.Client_MANDT,
@@ -84,11 +86,19 @@ WITH
         StockMonthlySnapshots.MonthEndDate = LAST_DAY(CURRENT_DATE),
         CURRENT_DATE,
         StockMonthlySnapshots.MonthEndDate) AS MonthEndDate,
-      StockMonthlySnapshots.MonthEndDate BETWEEN LAST_DAY(DATE_SUB(CURRENT_DATE(), INTERVAL 12 MONTH))
-      AND LAST_DAY(DATE_SUB(CURRENT_DATE, INTERVAL 1 MONTH)) AS IsPast12MonthsExcludingCurrent,
-      StockMonthlySnapshots.MonthEndDate BETWEEN LAST_DAY(DATE_SUB(CURRENT_DATE(), INTERVAL 12 MONTH))
-      AND LAST_DAY(CURRENT_DATE) AS IsPast12MonthsIncludingCurrent,
-      ValueAndCost.ValueOfTotalValuatedStock_SALK3,
+      StockMonthlySnapshots.MonthEndDate
+        BETWEEN -- noqa: disable=L003
+          LAST_DAY(DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH))
+        AND
+          LAST_DAY(DATE_SUB(CURRENT_DATE, INTERVAL 1 MONTH))
+        AS IsPast12MonthsExcludingCurrent,
+      StockMonthlySnapshots.MonthEndDate
+        BETWEEN
+          LAST_DAY(DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH))
+        AND
+          LAST_DAY(CURRENT_DATE)
+        AS IsPast12MonthsIncludingCurrent,
+      ValueAndCost.ValueOfTotalValuatedStock_SALK3, --noqa: enable=all
       ValueAndCost.StandardCost_STPRS,
       ValueAndCost.MovingAveragePrice_VERPR,
       SUM(StockMonthlySnapshots.QuantityMonthlyCumulative) AS QuantityMonthlyCumulative,
@@ -98,6 +108,8 @@ WITH
       SUM(StockMonthlySnapshots.QuantityIssuedToDelivery) AS QuantityIssuedToDelivery,
       SUM(StockMonthlySnapshots.TotalConsumptionQuantity) AS TotalConsumptionQuantity
     FROM
+      -- TODO: Evaluate if all columns in StockMonthlySnapshots can be moved into ValueAndCost
+      -- so we don't need to query the source table twice.
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.StockMonthlySnapshots` AS StockMonthlySnapshots
     LEFT JOIN
       ValueAndCost
@@ -106,6 +118,8 @@ WITH
         AND StockMonthlySnapshots.MaterialNumber_MATNR = ValueAndCost.MaterialNumber_MATNR
         AND StockMonthlySnapshots.Plant_WERKS = ValueAndCost.Plant_WERKS
         AND StockMonthlySnapshots.MonthEndDate = ValueAndCost.MonthEndDate
+        AND StockMonthlySnapshots.FiscalPeriod = ValueAndCost.FiscalPeriod
+        AND StockMonthlySnapshots.FiscalYear = ValueAndCost.FiscalYear
     LEFT JOIN
       `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.SlowMovingThreshold` AS SlowMovingThreshold
       ON
@@ -144,44 +158,65 @@ WITH
       CurrentStock.Plant_WERKS,
       CurrentStock.LanguageKey_SPRAS,
       CurrentStock.MonthEndDate,
+      CurrentStock.FiscalPeriod,
+      CurrentStock.FiscalYear,
 
       -- TotalConsumptionQuantity for past 12 months excluding current month
-      IF(IsPast12MonthsExcludingCurrent,
-        SUM(CurrentStock.TotalConsumptionQuantity) OVER(
-          PARTITION BY CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
-            CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS, IsPast12MonthsExcludingCurrent),
+      IF(
+        IsPast12MonthsExcludingCurrent,
+        SUM(CurrentStock.TotalConsumptionQuantity)
+          OVER ( -- noqa: disable=L003
+            PARTITION BY
+              CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
+              CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS,
+              IsPast12MonthsExcludingCurrent),
         0) AS TotalConsumptionQuantityForPastYear,
 
       -- TotalConsumptionQuantity For Past 12 Months To Current Date
-      IF(IsPast12MonthsIncludingCurrent,
-        SUM(CurrentStock.TotalConsumptionQuantity) OVER(
-          PARTITION BY CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
-            CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS,
-            IsPast12MonthsIncludingCurrent),
+      IF(
+        IsPast12MonthsIncludingCurrent,
+        SUM(CurrentStock.TotalConsumptionQuantity)
+          OVER (
+            PARTITION BY
+              CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
+              CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS,
+              IsPast12MonthsIncludingCurrent),
         0) AS TotalConsumptionQuantityForPastYearTillToday,
 
       --  Demand Per Day For Past 12 Months To Current Date
-      IF(IsPast12MonthsIncludingCurrent,
-        SUM(TotalConsumptionQuantity / (365 + DATE_DIFF(CAST(CURRENT_DATE AS DATE),
-          CAST(DATE_TRUNC(CURRENT_DATE, MONTH) AS DATE), DAY))) OVER(
-          PARTITION BY CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
-            CurrentStock.Plant_WERKS, LanguageKey_SPRAS, IsPast12MonthsIncludingCurrent),
+      IF(
+        IsPast12MonthsIncludingCurrent,
+        SUM(TotalConsumptionQuantity / (365 + EXTRACT(DAY FROM CURRENT_DATE)))
+          OVER (
+            PARTITION BY
+              CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
+              CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS,
+              IsPast12MonthsIncludingCurrent
+          ),
         0) AS DemandPerDayForPastYearTillToday,
 
       -- Inventory For Each Month
-      SUM(CurrentStock.ValueOfTotalValuatedStock_SALK3) OVER(
-        PARTITION BY CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
-          CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS
-        ORDER BY CurrentStock.CalYear, CurrentStock.CalMonth ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
-      ) AS InventoryByMonth,
+      SUM(CurrentStock.ValueOfTotalValuatedStock_SALK3)
+        OVER (
+          PARTITION BY
+            CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
+            CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS
+          ORDER BY
+            CurrentStock.CalYear, CurrentStock.CalMonth
+          ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+        ) AS InventoryByMonth,
 
       -- Avg Inventory For Each Month
-      SUM(CurrentStock.ValueOfTotalValuatedStock_SALK3 / 2) OVER(
-        PARTITION BY CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
-          CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS
-        ORDER BY CurrentStock.CalYear, CurrentStock.CalMonth ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
-      ) AS AvgInventoryByMonth
-    FROM
+      SUM(CurrentStock.ValueOfTotalValuatedStock_SALK3 / 2)
+        OVER (
+          PARTITION BY
+            CurrentStock.Client_MANDT, CurrentStock.MaterialNumber_MATNR,
+            CurrentStock.Plant_WERKS, CurrentStock.LanguageKey_SPRAS
+          ORDER BY
+            CurrentStock.CalYear, CurrentStock.CalMonth
+          ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING
+        ) AS AvgInventoryByMonth
+    FROM -- noqa: enable=all
       CurrentStock
   ),
 
@@ -225,12 +260,13 @@ WITH
       CalculatedMetrics.AvgInventoryByMonth,
 
       -- Inventory Value
-      IF(CurrentStock.MaterialType_MTART IN ('FERT', 'HALB'),
-        CurrentStock.QuantityMonthlyCumulative * CurrentStock.StandardCost_STPRS,
-        IF(CurrentStock.MaterialType_MTART IN ('ROH', 'HIBE'),
-          CurrentStock.QuantityMonthlyCumulative * CurrentStock.MovingAveragePrice_VERPR,
-          0)
-      ) AS InventoryValue
+      CASE
+        WHEN CurrentStock.MaterialType_MTART IN ('FERT', 'HALB')
+          THEN CurrentStock.QuantityMonthlyCumulative * CurrentStock.StandardCost_STPRS
+        WHEN CurrentStock.MaterialType_MTART IN ('ROH', 'HIBE')
+          THEN CurrentStock.QuantityMonthlyCumulative * CurrentStock.MovingAveragePrice_VERPR
+        ELSE 0
+      END AS InventoryValue
     FROM
       CurrentStock
     LEFT JOIN
@@ -241,6 +277,8 @@ WITH
         AND CurrentStock.Plant_WERKS = CalculatedMetrics.Plant_WERKS
         AND CurrentStock.LanguageKey_SPRAS = CalculatedMetrics.LanguageKey_SPRAS
         AND CurrentStock.MonthEndDate = CalculatedMetrics.MonthEndDate
+        AND CurrentStock.FiscalPeriod = CalculatedMetrics.FiscalPeriod
+        AND CurrentStock.FiscalYear = CalculatedMetrics.FiscalYear
   )
 
 SELECT
