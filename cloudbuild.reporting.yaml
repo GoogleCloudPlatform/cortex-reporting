@@ -115,7 +115,7 @@ steps:
         # Load annotations
         python3 common/annotations_loader.py --annotations-directory "annotations/${_SQL_FLAVOUR_,,}"
 logsBucket: "gs://$_GCS_BUCKET"
-timeout: 7200s
+timeout: 18000s
 substitutions:
   _CONFIG_FILE: "config/config.json"
   _K9_MANIFEST_FILE: "k9_manifest.yaml"
