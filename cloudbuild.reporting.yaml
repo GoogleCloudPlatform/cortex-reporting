@@ -91,6 +91,9 @@ steps:
     args:
       - "-c"
       - |-
+        
+        set -e
+        
         _SQL_FLAVOUR_=$(jq -r ."SAP.SQLFlavor" "${_CONFIG_FILE}")
 
         if [[ "${_TGT_BUCKET}" != "" ]]
