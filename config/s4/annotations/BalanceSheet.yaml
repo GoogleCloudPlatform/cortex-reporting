@@ -1,0 +1,18 @@
+name: "{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.BalanceSheet"
+description: "Balance sheet report by Mandant, Company, Chart of Accounts,Hierarchy Name,BusinessArea, General Ledger,Fiscal Year, Fiscal Period, Hierarchy Node, Language, Target Currency. Hierarchy is obtained from financial statement version, and balances are pre-processed. #EXPERIMENTAL"
+catalog_tags:
+  - display_name: "line_of_business"
+    fields:
+      - display_name: "group"
+        value: "Finance"
+## CORTEX-CUSTOMER: Update asset policy example to fit your use case.
+asset_policies:
+  - role: READER
+    principals:
+      - "group:finance_readers@example.com"
+## CORTEX-CUSTOMER: Update row policy example to fit your use case.
+row_policies:
+  - name: "company_code_c001"
+    readers:
+      - "group:c001_readers@example.com"
+    filter: "CompanyCode = 'C001'"

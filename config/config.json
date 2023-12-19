@@ -1,6 +1,7 @@
 {
     "testData": true,
     "deploySAP": true,
+    "deployDataMesh": true,
     "turboMode": true,
     "projectIdSource": "",
     "projectIdTarget": "",
@@ -17,6 +18,12 @@
         "datasets": {
             "processing": "K9_PROCESSING"
         }
+    },
+    "DataMesh": {
+        "deployDescriptions": true,
+        "deployLakes": false,
+        "deployCatalog": false,
+        "deployACLs": false
     },
     "SAP": {
         "deployCDC": true,

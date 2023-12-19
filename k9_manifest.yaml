@@ -17,14 +17,20 @@ dawgs:
   #
 
   - id: currency_conversion
-    path: external_dag/currency_conversion
+    path: local_k9/currency_conversion
 
   - id: hier_reader
-    path: external_dag/hier_reader
+    path: local_k9/hier_reader
     entry_point: deploy_hier_reader.py
 
   - id: inventory_snapshots
-    path: external_dag/inventory_snapshots
+    path: local_k9/inventory_snapshots
 
   - id: prod_hierarchy_texts
-    path: external_dag/prod_hierarchy_texts
+    path: local_k9/prod_hierarchy_texts
+
+  - id: fsv_hierarchy
+    path: local_k9/fsv_hierarchy
+
+  - id: financial_statement
+    path: local_k9/financial_statement

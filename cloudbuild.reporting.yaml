@@ -60,7 +60,7 @@ steps:
         echo "✅ Placeholder K9 Processing tables have been created if they did not exist."
 
   - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
-    id: "generate_local_k9"
+    id: "generate_prereqs"
     waitFor: ["init_deploy_config"]
     entrypoint: "bash"
     args:
@@ -73,7 +73,7 @@ steps:
           _TGT_BUCKET_=$(jq -r ."targetBucket" "${_CONFIG_FILE}")
         fi
 
-        bq_object_settings_file="config/reporting_settings_local_k9.yaml"
+        bq_object_settings_file="config/reporting_settings_common_prereqs.yaml"
 
         # Execute the common report generation script.
         common/materializer/deploy.sh \
@@ -84,16 +84,16 @@ steps:
             --config_file "${_CONFIG_FILE}" \
             --materializer_settings_file "$${bq_object_settings_file}" \
             --k9_manifest "${_K9_MANIFEST_FILE}"
+
   - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
     id: "reporting"
-    waitFor: ["generate_k9_placeholder", "generate_local_k9"]
+    waitFor: ["generate_k9_placeholder", "generate_prereqs"]
     entrypoint: "bash"
     args:
       - "-c"
       - |-
-        
         set -e
-        
+
         _SQL_FLAVOUR_=$(jq -r ."SAP.SQLFlavor" "${_CONFIG_FILE}")
 
         if [[ "${_TGT_BUCKET}" != "" ]]
@@ -113,10 +113,32 @@ steps:
             --module_name "SAP" \
             --target_type "Reporting" \
             --config_file "${_CONFIG_FILE}" \
-            --materializer_settings_file "$${bq_object_settings_file}"
+            --materializer_settings_file "$${bq_object_settings_file}" \
+            --k9_manifest "${_K9_MANIFEST_FILE}"
 
-        # Load annotations
-        python3 common/annotations_loader.py --annotations-directory "annotations/${_SQL_FLAVOUR_,,}"
+  - name: gcr.io/kittycorn-public/deploy-kittycorn:v2.0
+    id: 'datamesh'
+    waitFor: ['reporting']
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |-
+        set -e
+        _DEPLOY_DATA_MESH_=$(jq -r ."deployDataMesh" "${_CONFIG_FILE}")
+
+        if [[ "$${_DEPLOY_DATA_MESH_}" == "true" ]]; then
+          _SQL_FLAVOR_=$(jq -r ."SAP.SQLFlavor" "${_CONFIG_FILE}")
+
+          python3 common/data_mesh/deploy_data_mesh.py \
+              --config-file "${_CONFIG_FILE}" \
+              --tag-template-directories config/$${_SQL_FLAVOR_}/tag_templates \
+              --policy-directories config/$${_SQL_FLAVOR_}/policy_taxonomies \
+              --lake-directories config/$${_SQL_FLAVOR_}/lakes \
+              --annotation-directories config/$${_SQL_FLAVOR_}/annotations
+        else
+          echo "==Skipping Data Mesh=="
+        fi
+
 logsBucket: "gs://$_GCS_BUCKET"
 timeout: 18000s
 substitutions:

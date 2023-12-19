@@ -19,12 +19,19 @@
 
 # The following files will be deployed in parallel
 bq_independent_objects:
+
   - sql_file: NetDueDateCalc.sql
     type: script
 
   - sql_file: CurrencyConversion.sql
     description: "Exchange Rate for Currency Conversion"
     type: view
+
+  - sql_file: fiscal_date_dim.sql
+    type: table
+    description: "Fiscal Date Dimension"
+    table_setting:
+      load_frequency: "@yearly"
 
   - sql_file: fiscal_period.sql
     type: script
@@ -328,6 +335,10 @@ bq_independent_objects:
     description: "One Touch Order Reporting"
     type: view
 
+  - sql_file: FSVTextsMD.sql
+    description: "Text for FSV Hierarchy Node"
+    type: view
+
 bq_dependent_objects:
   - sql_file: BusinessPartnersMD.sql
     description: "Business Partners and Addresses Master Data"
@@ -515,6 +526,9 @@ bq_dependent_objects:
     table_setting:
       load_frequency: "@hourly"
 
+  - type: k9_dawg
+    k9_id: inventory_snapshots
+
   - sql_file: StockWeeklySnapshots.sql
     description: "Stock Weekly Snapshots"
     type: table
@@ -583,3 +597,26 @@ bq_dependent_objects:
           time_grain: "day",
         }
       cluster_details: { columns: ["Company_BUKRS", "FiscalYear"] }
+
+  - sql_file: financial_statement.sql
+    type: script
+
+  - sql_file: financial_statement_initial_load.sql
+    type: script
+
+  - type: k9_dawg
+    k9_id: financial_statement
+
+  - sql_file: FinancialStatement.sql
+    description: "Financial Statement"
+    type: table
+    table_setting:
+      load_frequency: "@monthly"
+      cluster_details: { columns: ["CompanyCode", "FiscalYear", "FiscalPeriod"] }
+
+  - sql_file: BalanceSheet.sql
+    description: "Balance Sheet"
+    type: table
+    table_setting:
+      load_frequency: "@monthly" # Make sure it runs after FinancialStatement
+      cluster_details: { columns: ["CompanyCode", "FiscalYear", "FiscalPeriod"] }

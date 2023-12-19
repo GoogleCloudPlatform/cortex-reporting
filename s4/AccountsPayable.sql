@@ -58,7 +58,7 @@ AccountingInvoices AS (
     ON
       AccountingDocuments.Client_MANDT = InvoiceDocuments.Client_MANDT
       AND AccountingDocuments.CompanyCode_BUKRS = InvoiceDocuments.CompanyCode_BUKRS
-      AND AccountingDocuments.ObjectKey_AWKEY = CONCAT(InvoiceDocuments.InvoiceDocNum_BELNR, InvoiceDocuments.FiscalYear_GJAHR)
+      AND LEFT(AccountingDocuments.ObjectKey_AWKEY, 10) = InvoiceDocuments.InvoiceDocNum_BELNR
       AND AccountingDocuments.FiscalYear_GJAHR = InvoiceDocuments.FiscalYear_GJAHR
       AND LTRIM(AccountingDocuments.NumberOfLineItemWithinAccountingDocument_BUZEI, '0') = LTRIM(InvoiceDocuments.InvoiceDocLineNum_BUZEI, '0')
   WHERE
@@ -291,7 +291,7 @@ SELECT
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
     AccountingInvoicesKPI.AccountType_KOART = 'K'
-    AND AccountingInvoicesKPI.PostingDate_BUDAT < CURRENT_DATE()
+    AND AccountingInvoicesKPI.PostingDateInTheDocument_BUDAT < CURRENT_DATE()
     AND AccountingInvoicesKPI.NetDueDate < CURRENT_DATE()
     AND AccountingInvoicesKPI.ClearingDate_AUGDT IS NULL,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR,
@@ -307,7 +307,7 @@ SELECT
   IF(
     ## CORTEX-CUSTOMER: Please add relevant Account Type. Value 'K' represents 'Vendor'
     AccountingInvoicesKPI.AccountType_KOART = 'K'
-    AND AccountingInvoicesKPI.PostingDate_BUDAT < CURRENT_DATE()
+    AND AccountingInvoicesKPI.PostingDateInTheDocument_BUDAT < CURRENT_DATE()
     AND AccountingInvoicesKPI.NetDueDate < CURRENT_DATE()
     AND AccountingInvoicesKPI.ClearingDate_AUGDT IS NULL,
     AccountingInvoicesKPI.AmountInLocalCurrency_DMBTR * CurrencyConversion.ExchangeRate_UKURS,
@@ -418,7 +418,7 @@ SELECT
   /* Parked Invoices */
   ## CORTEX-CUSTOMER: Please add relevant Invoice Status. Value 'A' represents that the document is Parked and not posted
   IF(AccountingInvoicesKPI.Invstatus_RBSTAT = 'A', TRUE, FALSE) AS IsParkedInvoice,
- 
+
   /* Blocked Invoices */
   ## CORTEX-CUSTOMER: Please add relevant Payment Block Keys. Value 'A' represents 'Locked for Payment' and 'B' represents 'Blocked for Payment'
   IF(AccountingInvoicesKPI.PaymentBlockKey_ZLSPR IN ('A', 'B'), TRUE, FALSE) AS IsBlockedInvoice,
