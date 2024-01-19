@@ -20,3 +20,9 @@ bq_independent_objects:
 
   - type: k9_dawg
     k9_id: fsv_hierarchy
+
+  - type: k9_dawg
+    k9_id: costcenter_hierarchy
+
+  - type: k9_dawg
+    k9_id: profitcenter_hierarchy

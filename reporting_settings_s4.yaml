@@ -619,3 +619,10 @@ bq_dependent_objects:
     table_setting:
       load_frequency: "@monthly" # Make sure it runs after FinancialStatement
       cluster_details: { columns: ["CompanyCode", "FiscalYear", "FiscalPeriod"] }
+
+  - sql_file: ProfitAndLoss.sql
+    description: "Profit And Loss"
+    type: table
+    table_setting:
+      load_frequency: "@monthly" # Make sure it runs after FinancialStatement
+      cluster_details: { columns: ["CompanyCode", "FiscalYear", "FiscalPeriod"] }
