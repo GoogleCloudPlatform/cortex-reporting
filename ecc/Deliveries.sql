@@ -330,7 +330,7 @@ SELECT
   lips.AUREL AS RelevantToAllocationTable_AUREL,
   lips.KPEIN AS ConditionPricingUnit_KPEIN,
   lips.KMEIN AS ConditionUnit_KMEIN,
-  lips.NETPR AS NetPrice_NETPR,
+  COALESCE(lips.NETPR * currency_decimal.CURRFIX, lips.NETPR) AS NetPrice_NETPR,
   lips.KOWRR AS StatisticalValues_KOWRR,
   lips.KZBEW AS MovementIndicator_KZBEW,
   lips.MFRGR AS MaterialFreightGroup_MFRGR,
@@ -502,7 +502,9 @@ SELECT
   COALESCE(lips.WAVWR * currency_decimal.CURRFIX, lips.WAVWR) AS CostInDocumentCurrency_WAVWR,
   COALESCE(lips.NETWR * currency_decimal.CURRFIX, lips.NETWR) AS NetValueInDocumentCurrency_NETWR,
   DATE_DIFF(likp.WADAT, likp.WADAT_IST, DAY) AS Delivery_Delay,
-  lips.LFIMG * lips.NETPR AS DeliveredNetValue,
+  COALESCE(
+    lips.LFIMG * lips.NETPR * currency_decimal.CURRFIX, lips.LFIMG * lips.NETPR
+  ) AS DeliveredNetValue,
   IF(likp.VBTYP IN ('H', 'K', 'N', 'O', 'T', '6') OR lips.SHKZG IN ('B', 'S', 'X'), 'X', '') AS IS_RETURN
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.lips` AS lips
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_ecc }}.likp` AS likp

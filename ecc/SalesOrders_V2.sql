@@ -138,7 +138,7 @@ SELECT
   vbap.RKFKF AS FormOfBillingForCO_RKFKF,
   vbap.SPART AS Division_SPART,
   vbap.GSBER AS BusinessArea_GSBER,
-  vbap.NETWR AS NetPrice_NETWR,
+  COALESCE(vbap.NETWR * tcurx_vbap.CURRFIX, vbap.NETWR) AS NetPrice_NETWR,
   vbap.WAERK AS Currency_WAERK,
   vbap.ANTLF AS MaximumPartialDeliveries_ANTLF,
   vbap.KZTLF AS PartialDeliveryAtItemLevel_KZTLF,

@@ -339,6 +339,18 @@ bq_independent_objects:
     description: "Text for FSV Hierarchy Node"
     type: view
 
+  - sql_file: UniversalLedgersMD.sql
+    description: "Text for Universal Ledgers"
+    type: view
+
+  - sql_file: CostCenterHierarchiesMD.sql
+    description: "Text for Cost Center Hierarchy"
+    type: view
+
+  - sql_file: ProfitCenterHierarchiesMD.sql
+    description: "Text for Profit Center Hierarchy"
+    type: view
+
 bq_dependent_objects:
   - sql_file: BusinessPartnersMD.sql
     description: "Business Partners and Addresses Master Data"

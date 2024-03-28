@@ -47,8 +47,12 @@ SELECT
   CSKT.LTEXT AS Description_LTEXT, CSKT.MCTXT AS SearchTermForMatchcodeUse_MCTXT
 FROM `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.csks` AS CSKS
 INNER JOIN `{{ project_id_src }}.{{ dataset_cdc_processed_s4 }}.cskt` AS CSKT
-  ON CSKS.MANDT = CSKT.mandt
-  AND CSKS.KOKRS = CSKT.KOKRS
-  AND CSKS.KOSTL = CSKT.KOSTL
+  ON
+    CSKS.MANDT = CSKT.mandt
+    AND CSKS.KOKRS = CSKT.KOKRS
+    AND CSKS.KOSTL = CSKT.KOSTL
+    AND CSKS.DATBI = CSKT.DATBI
+--noqa: disable=all
 WHERE cast(CSKS.DATAB AS STRING) <= concat( cast(extract( YEAR FROM current_date())AS STRING), cast(extract( MONTH FROM current_date())AS STRING), cast(extract( DAY FROM current_date())AS STRING) )
   AND cast(CSKS.DATBI AS STRING) >= concat( cast(extract( YEAR FROM current_date())AS STRING), cast(extract( MONTH FROM current_date())AS STRING), cast(extract( DAY FROM current_date())AS STRING) )
+--noqa: enable=all
