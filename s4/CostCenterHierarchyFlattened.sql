@@ -41,7 +41,7 @@ ON
     AND CostCenters.setclass = CCNodeText.SetClass_SETCLASS
     AND CostCenters.subclass = CCNodeText.OrganizationalUnit_SUBCLASS
     AND CostCenters.node = CAST(CCNodeText.NodeNumber_SUCC AS STRING)
-    AND CostCenters.hiername = CCParentText.SetName_HIERBASE
+    AND CostCenters.hiername = CCNodeText.SetName_HIERBASE
 LEFT JOIN
     `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.CostCentersMD` AS CCText
  ON
