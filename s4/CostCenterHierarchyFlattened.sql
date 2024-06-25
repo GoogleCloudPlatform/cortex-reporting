@@ -51,4 +51,13 @@ LEFT JOIN
     -- # CORTEX-CUSTOMER Update to use a single language of your choice for Node texts
     AND CCText.Language_SPRAS = 'E'
     AND CCText.ValidTo_DATBI >= '9999-12-31'
-    
+QUALIFY
+  ROW_NUMBER() OVER (
+    PARTITION BY 
+      Client_MANDT, 
+      HierarchyClass_SETCLASS, 
+      HierarchySubClass_SUBCLASS, 
+      HierarchyType_HIERBASE, 
+      CostCenter_KOSTL 
+    ORDER BY Level_HLEVEL DESC
+  ) = 1
