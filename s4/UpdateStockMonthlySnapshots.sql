@@ -12,17 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## CORTEX-CUSTOMER: These procedures need to execute for inventory views to work.
-## please check the ERD linked in the README for dependencies. The procedures
-## can be scheduled with Cloud Composer with the provided templates or ported
-## into the scheduling tool of choice. These DAGs will be executed from a different
-## directory structure in future releases.
 ## PREVIEW
 
+# Update (refresh) stock monthly snapshots table for records between provided dates (inclusive).
+#
+# `monthly_inventory_aggregation` table must be up to date before calling this function.
+#
+# @param start_date Starting date of refresh. Must be the first day of a month.
+# @param end_date Ending date of refresh. Must be later than start_date.
 CREATE OR REPLACE PROCEDURE
-`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.UpdateStockMonthlySnapshots`(
+`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.UpdateStockMonthlySnapshots` (
   start_date DATE,
-  end_date DATE)
+  end_date DATE
+)
 BEGIN
   CREATE TEMP TABLE LastMonthSnapshot AS
   SELECT
@@ -30,7 +32,8 @@ BEGIN
     EXCEPT (
       month_end_date,
       cal_year,
-      cal_month),
+      cal_month
+    ),
     LAST_DAY(start_date, MONTH) AS month_end_date,
     EXTRACT(YEAR FROM start_date) AS cal_year,
     EXTRACT(MONTH FROM start_date) AS cal_month
@@ -61,9 +64,7 @@ BEGIN
       sobkz,
       shkzg,
       meins,
-      {% if sql_flavour == 's4' -%}
       bstaus_sg,
-      {% endif -%}
       waers
     FROM
       LastMonthSnapshot
@@ -80,12 +81,11 @@ BEGIN
       sobkz,
       shkzg,
       meins,
-      {% if sql_flavour == 's4' -%}
       bstaus_sg,
-      {% endif -%}
       waers
     FROM
-      CurrentPeriodMovements);
+      CurrentPeriodMovements
+  );
 
   DELETE
   FROM
@@ -95,16 +95,16 @@ BEGIN
 
   INSERT INTO
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.stock_monthly_snapshots`
-  (mandt, werks, matnr, charg, lgort, bukrs, bwart, insmk, sobkz,
+  (
+    mandt, werks, matnr, charg, lgort, bukrs, bwart, insmk, sobkz,
     shkzg, cal_year, cal_month, meins,
-    {% if sql_flavour == 's4' -%}
     bstaus_sg,
-    {% endif -%}
     waers, month_end_date,
     total_monthly_movement_quantity,
     total_monthly_movement_amount,
     amount_monthly_cumulative,
-    quantity_monthly_cumulative)
+    quantity_monthly_cumulative
+  )
   WITH
     DateDim AS (
       SELECT DISTINCT
@@ -132,12 +132,10 @@ BEGIN
         sobkz,
         shkzg,
         meins,
-        {% if sql_flavour == 's4' -%}
         bstaus_sg,
-        {% endif -%}
         waers,
-        total_monthly_movement_amount,
-        total_monthly_movement_quantity
+        total_monthly_movement_amount,  -- noqa: RF02
+        total_monthly_movement_quantity  -- noqa: RF02
       -- this ensures all month / material combinations exist even if
       -- they don’t exist in current movements
       FROM
@@ -147,7 +145,8 @@ BEGIN
       LEFT JOIN
         CurrentPeriodMovements
         USING
-          (month_end_date,
+          (
+            month_end_date,
             cal_year,
             cal_month,
             mandt,
@@ -161,10 +160,9 @@ BEGIN
             sobkz,
             shkzg,
             meins,
-            {% if sql_flavour == 's4' -%}
             bstaus_sg,
-            {% endif -%}
-            waers)
+            waers
+          )
       UNION ALL
       -- take balance of last month and treat it as beginning balance of the first month
       SELECT
@@ -182,9 +180,7 @@ BEGIN
         sobkz,
         shkzg,
         meins,
-        {% if sql_flavour == 's4' -%}
         bstaus_sg,
-        {% endif -%}
         waers,
         amount_monthly_cumulative AS total_monthly_movement_amount,
         quantity_monthly_cumulative AS total_monthly_movement_quantity
@@ -207,9 +203,7 @@ BEGIN
         sobkz,
         shkzg,
         meins,
-        {% if sql_flavour == 's4' -%}
         bstaus_sg,
-        {% endif -%}
         waers,
         SUM(total_monthly_movement_quantity) AS total_monthly_movement_quantity_sum,
         SUM(total_monthly_movement_amount) AS total_monthly_movement_amount_sum
@@ -230,9 +224,7 @@ BEGIN
         sobkz,
         shkzg,
         meins,
-        {% if sql_flavour == 's4' -%}
         bstaus_sg,
-        {% endif -%}
         waers
     )
   SELECT
@@ -249,59 +241,56 @@ BEGIN
     cal_year,
     cal_month,
     meins,
-    {% if sql_flavour == 's4' -%}
     bstaus_sg,
-    {% endif -%}
     waers,
     month_end_date,
-    COALESCE(total_monthly_movement_quantity, 0) AS total_monthly_movement_quantity,
-    COALESCE(total_monthly_movement_amount, 0) AS total_monthly_movement_amount,
-    SUM(total_monthly_movement_amount_sum)
-    OVER (
-      PARTITION BY
-        mandt,
-        matnr,
-        werks,
-        charg,
-        lgort,
-        bukrs,
-        bwart,
-        insmk,
-        sobkz,
-        shkzg,
-        meins,
-        {% if sql_flavour == 's4' -%}
-        bstaus_sg,
-        {% endif -%}
-        waers
-      ORDER BY month_end_date ASC
-      ROWS UNBOUNDED PRECEDING) AS amount_monthly_cumulative,
-    SUM(total_monthly_movement_quantity_sum)
-    OVER (
-      PARTITION BY
-        mandt,
-        matnr,
-        werks,
-        charg,
-        lgort,
-        bukrs,
-        bwart,
-        insmk,
-        sobkz,
-        shkzg,
-        meins,
-        {% if sql_flavour == 's4' -%}
-        bstaus_sg,
-        {% endif -%}
-        waers
-      ORDER BY month_end_date ASC
-      ROWS UNBOUNDED PRECEDING) AS quantity_monthly_cumulative
+    COALESCE(total_monthly_movement_quantity, 0) AS total_monthly_movement_quantity,  -- noqa: RF02
+    COALESCE(total_monthly_movement_amount, 0) AS total_monthly_movement_amount,  -- noqa: RF02
+    SUM(total_monthly_movement_amount_sum)  -- noqa: RF02
+      OVER (
+        PARTITION BY
+          mandt,
+          matnr,
+          werks,
+          charg,
+          lgort,
+          bukrs,
+          bwart,
+          insmk,
+          sobkz,
+          shkzg,
+          meins,
+          bstaus_sg,
+          waers
+        ORDER BY month_end_date ASC
+        ROWS UNBOUNDED PRECEDING
+      ) AS amount_monthly_cumulative,
+    SUM(total_monthly_movement_quantity_sum)  -- noqa: RF02
+      OVER (
+        PARTITION BY
+          mandt,
+          matnr,
+          werks,
+          charg,
+          lgort,
+          bukrs,
+          bwart,
+          insmk,
+          sobkz,
+          shkzg,
+          meins,
+          bstaus_sg,
+          waers
+        ORDER BY month_end_date ASC
+        ROWS UNBOUNDED PRECEDING
+      ) AS quantity_monthly_cumulative
   FROM
     MonthlyCumulative
   LEFT JOIN
     CurrentPeriodMovements
     USING
-      (month_end_date,
+      (
+        month_end_date,
         cal_year,
         cal_month,
         mandt,
@@ -315,10 +304,9 @@ BEGIN
         sobkz,
         shkzg,
         meins,
-        {% if sql_flavour == 's4' -%}
         bstaus_sg,
-        {% endif -%}
-        waers)
+        waers
+      )
   QUALIFY
     amount_monthly_cumulative IS NOT NULL OR quantity_monthly_cumulative IS NOT NULL;
 

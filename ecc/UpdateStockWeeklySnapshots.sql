@@ -12,24 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## CORTEX-CUSTOMER: These procedures need to execute for inventory views to work.
-## please check the ERD linked in the README for dependencies. The procedures
-## can be scheduled with Cloud Composer with the provided templates or ported
-## into the scheduling tool of choice. These DAGs will be executed from a different
-## directory structure in future releases.
 ## PREVIEW
 
+# Update (refresh) stock weekly snapshots table for records between provided dates (inclusive).
+#
+# `weekly_inventory_aggregation` table must be up to date before calling this function.
+# Week start date is defined in the Calendar Date Dimension table (`calendar_date_dim`).
+#
+# @param start_date Starting date of refresh. Must be the first day of a week.
+# @param end_date Ending date of refresh. Must be later than start_date.
 CREATE OR REPLACE PROCEDURE
-`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.UpdateStockWeeklySnapshots`(
+`{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.UpdateStockWeeklySnapshots` (
   start_date DATE,
-  end_date DATE)
+  end_date DATE
+)
 BEGIN
   CREATE TEMP TABLE LastWeekSnapshot AS
   SELECT
     * EXCEPT (
       week_end_date,
       cal_year,
-      cal_week),
+      cal_week
+    ),
     LAST_DAY(start_date, WEEK) AS week_end_date,
     EXTRACT(YEAR FROM start_date) AS cal_year,
     EXTRACT(WEEK FROM start_date) AS cal_week
@@ -81,7 +85,8 @@ BEGIN
       waers,
       stock_characteristic
     FROM
-      CurrentPeriodMovements);
+      CurrentPeriodMovements
+  );
 
   DELETE FROM
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.stock_weekly_snapshots`
@@ -91,12 +96,14 @@ BEGIN
 
   INSERT INTO
   `{{ project_id_tgt }}.{{ dataset_reporting_tgt }}.stock_weekly_snapshots`
-  ( mandt, werks, matnr, charg, lgort, bukrs, cal_year, cal_week, meins,
+  (
+    mandt, werks, matnr, charg, lgort, bukrs, cal_year, cal_week, meins,
     waers, stock_characteristic, week_end_date,
     total_weekly_movement_quantity,
     total_weekly_movement_amount,
     amount_weekly_cumulative,
-    quantity_weekly_cumulative)
+    quantity_weekly_cumulative
+  )
   WITH
     DateDim AS (
       SELECT DISTINCT
@@ -123,8 +130,8 @@ BEGIN
         meins,
         waers,
         stock_characteristic,
-        total_weekly_movement_amount,
-        total_weekly_movement_quantity
+        total_weekly_movement_amount,  -- noqa: RF02
+        total_weekly_movement_quantity  -- noqa: RF02
       -- # this ensures all week / material combinations exist even if they
       -- # don’t exist in current movements
       FROM
@@ -134,7 +141,8 @@ BEGIN
       LEFT JOIN
         CurrentPeriodMovements
         USING
-          (week_end_date,
+          (
+            week_end_date,
             cal_year,
             cal_week,
             mandt,
@@ -145,7 +153,8 @@ BEGIN
             bukrs,
             meins,
             waers,
-            stock_characteristic)
+            stock_characteristic
+          )
       UNION ALL
       --# take balance of last week and treat it as beginning balance
       --# of the first week
@@ -212,9 +221,9 @@ BEGIN
     waers,
     stock_characteristic,
     week_end_date,
-    COALESCE(total_weekly_movement_quantity, 0) AS total_weekly_movement_quantity,
-    COALESCE(total_weekly_movement_amount, 0) AS total_weekly_movement_amount,
-    SUM(total_weekly_movement_amount_sum) OVER (
+    COALESCE(total_weekly_movement_quantity, 0) AS total_weekly_movement_quantity,  -- noqa: RF02
+    COALESCE(total_weekly_movement_amount, 0) AS total_weekly_movement_amount,  -- noqa: RF02
+    SUM(total_weekly_movement_amount_sum) OVER (  -- noqa: RF02
       PARTITION BY
         mandt,
         matnr,
@@ -226,8 +235,9 @@ BEGIN
         waers,
         stock_characteristic
       ORDER BY week_end_date ASC
-      ROWS UNBOUNDED PRECEDING) AS amount_weekly_cumulative,
-    SUM(total_weekly_movement_quantity_sum) OVER (
+      ROWS UNBOUNDED PRECEDING
+    ) AS amount_weekly_cumulative,
+    SUM(total_weekly_movement_quantity_sum) OVER (  -- noqa: RF02
       PARTITION BY
         mandt,
         matnr,
@@ -239,13 +249,15 @@ BEGIN
         waers,
         stock_characteristic
       ORDER BY week_end_date ASC
-      ROWS UNBOUNDED PRECEDING) AS quantity_weekly_cumulative
+      ROWS UNBOUNDED PRECEDING
+    ) AS quantity_weekly_cumulative
   FROM
     WeeklyCumulative
   LEFT JOIN
     CurrentPeriodMovements
     USING
-      (week_end_date,
+      (
+        week_end_date,
         cal_year,
         cal_week,
         mandt,
@@ -256,7 +268,8 @@ BEGIN
         bukrs,
         meins,
         waers,
-        stock_characteristic)
+        stock_characteristic
+      )
   QUALIFY
     amount_weekly_cumulative IS NOT NULL OR quantity_weekly_cumulative IS NOT NULL;
 
