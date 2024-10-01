@@ -1,3 +1,5 @@
+**IMPORTANT: This README file is obsolete and no longer receives updates.** For the most current and reliable information, refer to the new documentation at [Google Cloud Cortex Framework Overview](https://cloud.google.com/cortex/docs/overview).
+
 # SAP Reporting
 
 Templates for SAP reporting (and more!) for Google Cloud Cortex Data Foundation.
